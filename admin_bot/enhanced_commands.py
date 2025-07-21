@@ -99,19 +99,28 @@ class EnhancedAdminCommands:
             
             await update.message.reply_text(f"🔄 Authenticating session '{session_name}'...")
             
-            success = await self.advanced_session_manager.authenticate_session(
+            auth_result = await self.advanced_session_manager.authenticate_session(
                 session_name, session_info.phone_number, verification_code
             )
             
-            if success:
+            if auth_result.get("success"):
                 await update.message.reply_text(
                     f"✅ Successfully authenticated session '{session_name}'\n"
                     f"🟢 Session is now active and ready for use"
                 )
+            elif auth_result.get("needs_otp"):
+                await update.message.reply_text(
+                    f"📱 OTP verification required for '{session_name}'\n"
+                    f"Please check your phone for the verification code and use:\n"
+                    f"`/authenticate {session_name} <verification_code>`",
+                    parse_mode='Markdown'
+                )
             else:
+                error_msg = auth_result.get("error", "Authentication failed")
                 await update.message.reply_text(
                     f"❌ Failed to authenticate session '{session_name}'\n"
-                    f"Please check your phone for verification code and try again"
+                    f"Error: {error_msg}\n\n"
+                    f"Please try again or check your phone number."
                 )
                 
         except Exception as e:
@@ -440,6 +449,41 @@ class EnhancedAdminCommands:
         except Exception as e:
             logger.error(f"Error in worker_status_command: {e}")
             await update.message.reply_text("❌ An error occurred while fetching worker status")
+    
+    async def session_help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /sessionhelp command."""
+        try:
+            help_text = (
+                "📚 **Session Management Guide**\n\n"
+                "**Step 1: Register a Session**\n"
+                "`/registersession <name> <phone> [priority] [max_pairs]`\n"
+                "Example: `/registersession my_session +1234567890 3 25`\n\n"
+                "**Step 2: Authenticate Session**\n"
+                "`/authenticate <name>`\n"
+                "This will send OTP to your phone\n\n"
+                "**Step 3: Enter OTP Code**\n"
+                "`/authenticate <name> <code>`\n"
+                "Example: `/authenticate my_session 12345`\n\n"
+                "**Check Status**\n"
+                "`/sessionstatus` - View all sessions\n"
+                "`/sessionstatus <name>` - View specific session\n"
+                "`/sessionhealth` - Check session health\n\n"
+                "**Manage Pairs**\n"
+                "`/optimalsession` - Find best session for new pairs\n"
+                "`/changesession <target> <pairs>` - Move pairs between sessions\n\n"
+                "**Tips:**\n"
+                "• Use simple session names (letters, numbers, underscores)\n"
+                "• Higher priority = better for new pairs\n"
+                "• Max 50 pairs per session recommended\n"
+                "• Keep phone number accessible for OTP\n\n"
+                "Need more help? Check `/help` for basic commands."
+            )
+            
+            await update.message.reply_text(help_text, parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Error in session_help_command: {e}")
+            await update.message.reply_text("❌ An error occurred while showing session help")
     
     # Helper methods
     

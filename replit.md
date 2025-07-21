@@ -23,6 +23,10 @@ Preferred communication style: Simple, everyday language.
 ✓ Integrated security features with admin whitelist and encrypted session storage
 ✓ Added automatic worker rebalancing and cleanup processes
 ✓ Implemented optimal session selection algorithm for new pair assignments
+✓ Fixed OTP verification process with real Telegram authentication
+✓ Simplified session registration and authentication workflow
+✓ Added step-by-step session help guide with `/sessionhelp` command
+✓ Improved error handling and user guidance for authentication issues
 
 ## System Architecture
 

@@ -104,19 +104,26 @@ class AdvancedSessionManager:
     async def register_session(self, session_name: str, phone_number: str, priority: int = 1, max_pairs: int = 30) -> bool:
         """Register a new session with enhanced metadata."""
         try:
+            # Check if session already exists
+            existing_session = await self.database.get_session_info(session_name)
+            if existing_session:
+                logger.warning(f"Session {session_name} already exists")
+                return False
+            
             # Create session info
             session_info = SessionInfo(
                 name=session_name,
                 phone_number=phone_number,
-                is_active=True,
-                health_status="unknown",
+                is_active=False,
+                health_status="registered",
                 pair_count=0,
                 max_pairs=max_pairs,
                 priority=priority,
                 metadata_info={
                     "registration_time": datetime.utcnow().isoformat(),
                     "auto_created": False,
-                    "registration_source": "manual"
+                    "registration_source": "manual",
+                    "authentication_pending": True
                 }
             )
             
@@ -124,13 +131,8 @@ class AdvancedSessionManager:
             session_id = await self.database.add_session_info(session_info)
             session_info.id = session_id
             
-            # Initial health check
-            health_result = await self._perform_health_check(session_name)
-            await self.database.update_session_health(
-                session_name, 
-                health_result.status, 
-                health_result.last_verified
-            )
+            # Create session structure in base session manager
+            await self.base_session_manager.create_session(session_name, phone_number)
             
             logger.info(f"Successfully registered session: {session_name} (ID: {session_id})")
             return True
@@ -139,40 +141,59 @@ class AdvancedSessionManager:
             logger.error(f"Failed to register session {session_name}: {e}")
             return False
     
-    async def authenticate_session(self, session_name: str, phone_number: str, verification_code: Optional[str] = None) -> bool:
+    async def authenticate_session(self, session_name: str, phone_number: str, verification_code: Optional[str] = None) -> Dict[str, Any]:
         """Authenticate a session with Telegram."""
         try:
+            # Check if session exists in database
+            session_info = await self.database.get_session_info(session_name)
+            if not session_info:
+                logger.error(f"Session {session_name} not found in database")
+                return {"success": False, "error": "Session not found", "needs_otp": False}
+            
             # Use base session manager for authentication
-            session_data = await self.base_session_manager.get_session(session_name)
-            
-            if not session_data:
-                logger.error(f"Session {session_name} not found")
-                return False
-            
-            # Perform authentication check
-            # This would integrate with Telethon client for actual authentication
-            # For now, we'll simulate the authentication process
-            
-            # Update session health after authentication
-            await self.database.update_session_health(
-                session_name, 
-                "healthy", 
-                datetime.utcnow()
+            auth_result = await self.base_session_manager.authenticate_session(
+                session_name, phone_number, verification_code
             )
             
-            # Update metadata
-            session_info = await self.database.get_session_info(session_name)
-            if session_info:
+            if auth_result.get("success"):
+                # Update session health after successful authentication
+                await self.database.update_session_health(
+                    session_name, 
+                    "healthy", 
+                    datetime.utcnow()
+                )
+                
+                # Update metadata
                 session_info.metadata_info = session_info.metadata_info or {}
                 session_info.metadata_info["last_auth_time"] = datetime.utcnow().isoformat()
                 session_info.metadata_info["auth_success"] = True
+                session_info.metadata_info["authentication_pending"] = False
+                
+                # Mark session as active
+                session_info.is_active = True
+                
+                logger.info(f"Successfully authenticated session: {session_name}")
+                return {"success": True, "needs_otp": False}
             
-            logger.info(f"Successfully authenticated session: {session_name}")
-            return True
+            elif auth_result.get("needs_code"):
+                # OTP verification needed
+                logger.info(f"OTP verification required for session: {session_name}")
+                return {"success": False, "needs_otp": True, "message": "Please check your phone for verification code"}
+            
+            else:
+                # Authentication failed
+                await self.database.update_session_health(
+                    session_name, 
+                    "auth_failed", 
+                    datetime.utcnow()
+                )
+                
+                logger.error(f"Authentication failed for session: {session_name}")
+                return {"success": False, "needs_otp": False, "error": auth_result.get("error", "Authentication failed")}
             
         except Exception as e:
             logger.error(f"Failed to authenticate session {session_name}: {e}")
-            return False
+            return {"success": False, "error": str(e), "needs_otp": False}
     
     async def delete_session(self, session_name: str, force: bool = False) -> bool:
         """Delete a session with safety checks."""

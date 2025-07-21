@@ -114,6 +114,7 @@ class AdminHandler:
                 ("deletesession", self.enhanced_commands.delete_session_command),
                 ("optimalsession", self.enhanced_commands.optimal_session_command),
                 ("workerstatus", self.enhanced_commands.worker_status_command),
+                ("sessionhelp", self.enhanced_commands.session_help_command),
             ]
             command_handlers.extend(enhanced_handlers)
         
