@@ -1,0 +1,17 @@
+# Telegram → Discord → Telegram Forwarding Bot Configuration
+# This file contains optional settings that complement environment variables
+
+# Basic settings (optional overrides for environment variables)
+log_level: "INFO"
+max_pairs_per_worker: 25
+message_rate_limit: 30
+max_file_size_mb: 50
+
+# Feature toggles
+enable_media_forwarding: true
+enable_sticker_forwarding: true 
+enable_poll_forwarding: true
+
+# Example admin user IDs (set these via environment variables)
+# admin_user_ids:
+#   - 123456789
