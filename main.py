@@ -14,6 +14,7 @@ from loguru import logger
 from config.settings import Settings
 from core.database import Database
 from core.session_manager import SessionManager
+from core.advanced_session_manager import AdvancedSessionManager
 from core.telegram_source import TelegramSource
 from core.telegram_destination import TelegramDestination
 from core.discord_relay import DiscordRelay
@@ -27,6 +28,7 @@ class ForwardingBot:
         self.settings: Optional[Settings] = None
         self.database: Optional[Database] = None
         self.session_manager: Optional[SessionManager] = None
+        self.advanced_session_manager: Optional[AdvancedSessionManager] = None
         self.telegram_source: Optional[TelegramSource] = None
         self.telegram_destination: Optional[TelegramDestination] = None
         self.discord_relay: Optional[DiscordRelay] = None
@@ -54,6 +56,9 @@ class ForwardingBot:
         # Initialize session manager
         self.session_manager = SessionManager(self.database, self.settings.encryption_key)
         
+        # Initialize advanced session manager
+        self.advanced_session_manager = AdvancedSessionManager(self.database, self.session_manager)
+        
         # Initialize Telegram source client
         self.telegram_source = TelegramSource(self.session_manager, self.database)
         
@@ -72,7 +77,8 @@ class ForwardingBot:
             self.settings.telegram_bot_token,
             self.database,
             self.session_manager,
-            self.settings.admin_user_ids
+            self.settings.admin_user_ids,
+            self.advanced_session_manager
         )
         
         logger.info("All components initialized successfully")
@@ -89,6 +95,7 @@ class ForwardingBot:
         try:
             # Start all components concurrently
             await asyncio.gather(
+                self.advanced_session_manager.start(),
                 self.telegram_source.start(),
                 self.telegram_destination.start(),
                 self.discord_relay.start(),
@@ -118,6 +125,8 @@ class ForwardingBot:
             stop_tasks.append(self.telegram_destination.stop())
         if self.telegram_source:
             stop_tasks.append(self.telegram_source.stop())
+        if self.advanced_session_manager:
+            stop_tasks.append(self.advanced_session_manager.stop())
         if self.database:
             stop_tasks.append(self.database.close())
             

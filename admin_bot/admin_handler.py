@@ -10,19 +10,23 @@ from loguru import logger
 
 from core.database import Database
 from core.session_manager import SessionManager
+from core.advanced_session_manager import AdvancedSessionManager
 from admin_bot.commands import AdminCommands
+from admin_bot.enhanced_commands import EnhancedAdminCommands
 
 
 class AdminHandler:
     """Main admin bot handler."""
     
-    def __init__(self, bot_token: str, database: Database, session_manager: SessionManager, admin_user_ids: List[int]):
+    def __init__(self, bot_token: str, database: Database, session_manager: SessionManager, admin_user_ids: List[int], advanced_session_manager: Optional[AdvancedSessionManager] = None):
         self.bot_token = bot_token
         self.database = database
         self.session_manager = session_manager
+        self.advanced_session_manager = advanced_session_manager
         self.admin_user_ids = set(admin_user_ids)
         self.application: Optional[Application] = None
         self.commands: Optional[AdminCommands] = None
+        self.enhanced_commands: Optional[EnhancedAdminCommands] = None
         self.running = False
     
     async def start(self):
@@ -34,8 +38,10 @@ class AdminHandler:
         try:
             logger.info("Starting admin bot...")
             
-            # Initialize commands handler
+            # Initialize commands handlers
             self.commands = AdminCommands(self.database, self.session_manager)
+            if self.advanced_session_manager:
+                self.enhanced_commands = EnhancedAdminCommands(self.database, self.advanced_session_manager)
             
             # Create application
             self.application = Application.builder().token(self.bot_token).build()
@@ -85,7 +91,7 @@ class AdminHandler:
         if not self.application or not self.commands:
             return
         
-        # Add command handlers with admin check
+        # Add basic command handlers with admin check
         command_handlers = [
             ("start", self.commands.start_command),
             ("help", self.commands.help_command),
@@ -98,13 +104,31 @@ class AdminHandler:
             ("blockword", self.commands.blockword_command),
         ]
         
+        # Add enhanced session management commands if available
+        if self.enhanced_commands:
+            enhanced_handlers = [
+                ("registersession", self.enhanced_commands.register_session_command),
+                ("authenticate", self.enhanced_commands.authenticate_session_command),
+                ("sessionstatus", self.enhanced_commands.session_status_command),
+                ("sessionhealth", self.enhanced_commands.session_health_command),
+                ("deletesession", self.enhanced_commands.delete_session_command),
+                ("optimalsession", self.enhanced_commands.optimal_session_command),
+                ("workerstatus", self.enhanced_commands.worker_status_command),
+            ]
+            command_handlers.extend(enhanced_handlers)
+        
         for command_name, handler_func in command_handlers:
             wrapped_handler = self._wrap_admin_handler(handler_func)
             self.application.add_handler(CommandHandler(command_name, wrapped_handler))
         
-        # Add callback query handler
+        # Add callback query handlers
         wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
         self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
+        
+        # Add enhanced callback handlers if available
+        if self.enhanced_commands:
+            enhanced_callback_handler = self._wrap_admin_handler(self.enhanced_commands.handle_delete_session_callback)
+            self.application.add_handler(CallbackQueryHandler(enhanced_callback_handler, pattern="delete_session_"))
         
         # Add message handler for unknown commands
         self.application.add_handler(
