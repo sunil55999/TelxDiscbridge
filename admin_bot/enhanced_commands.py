@@ -65,8 +65,31 @@ class EnhancedAdminCommands:
                     f"📱 Phone: {phone_number}\n"
                     f"⭐ Priority: {priority}\n"
                     f"📊 Max pairs: {max_pairs}\n\n"
-                    f"Use `/authenticate {session_name}` to activate the session."
+                    f"🔄 Now starting authentication process..."
                 )
+                
+                # Automatically start authentication
+                auth_result = await self.advanced_session_manager.authenticate_session(
+                    session_name, phone_number, None
+                )
+                
+                if auth_result.get("needs_otp"):
+                    await update.message.reply_text(
+                        f"📱 OTP sent to {phone_number}\n"
+                        f"Please check your Telegram app and use:\n"
+                        f"`/authenticate {session_name} <verification_code>`",
+                        parse_mode='Markdown'
+                    )
+                elif auth_result.get("success"):
+                    await update.message.reply_text(
+                        f"✅ Session '{session_name}' is ready to use!"
+                    )
+                else:
+                    error_msg = auth_result.get("error", "Authentication failed")
+                    await update.message.reply_text(
+                        f"❌ Authentication error: {error_msg}\n"
+                        f"You can retry with: `/authenticate {session_name}`"
+                    )
             else:
                 await update.message.reply_text(f"❌ Failed to register session '{session_name}'")
                 

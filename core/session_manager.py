@@ -133,14 +133,14 @@ class SessionManager:
             return False
     
     async def create_session(self, name: str, phone_number: str) -> bool:
-        """Create a new session entry."""
+        """Create a new session entry (only if not exists)."""
         try:
             async with self.database.Session() as session:
                 # Check if session already exists
                 existing = await session.get(SessionModel, name)
                 if existing:
-                    logger.warning(f"Session {name} already exists")
-                    return False
+                    logger.info(f"Session {name} already exists, skipping creation")
+                    return True  # Return True since session exists
                 
                 # Create new session without session data (to be filled during authentication)
                 session_model = SessionModel(
@@ -164,6 +164,10 @@ class SessionManager:
         try:
             from config.settings import Settings
             settings = Settings()
+            
+            # Ensure sessions directory exists
+            import os
+            os.makedirs("sessions", exist_ok=True)
             
             # Create Telethon client
             client = TelegramClient(
@@ -199,7 +203,9 @@ class SessionManager:
                     
                     # Save session data
                     session_string = client.session.save()
-                    await self.save_session(name, phone_number, session_string)
+                    success = await self.save_session(name, phone_number, session_string)
+                    if not success:
+                        logger.warning(f"Failed to save session data for {name}, but authentication successful")
                     
                     logger.info(f"Successfully authenticated session {name}")
                     await client.disconnect()

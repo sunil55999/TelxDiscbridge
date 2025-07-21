@@ -13,6 +13,7 @@ from core.session_manager import SessionManager
 from core.advanced_session_manager import AdvancedSessionManager
 from admin_bot.commands import AdminCommands
 from admin_bot.enhanced_commands import EnhancedAdminCommands
+from admin_bot.simple_session_commands import SimpleSessionCommands
 
 
 class AdminHandler:
@@ -27,6 +28,7 @@ class AdminHandler:
         self.application: Optional[Application] = None
         self.commands: Optional[AdminCommands] = None
         self.enhanced_commands: Optional[EnhancedAdminCommands] = None
+        self.simple_commands: Optional[SimpleSessionCommands] = None
         self.running = False
     
     async def start(self):
@@ -42,6 +44,7 @@ class AdminHandler:
             self.commands = AdminCommands(self.database, self.session_manager)
             if self.advanced_session_manager:
                 self.enhanced_commands = EnhancedAdminCommands(self.database, self.advanced_session_manager)
+                self.simple_commands = SimpleSessionCommands(self.database, self.advanced_session_manager)
             
             # Create application
             self.application = Application.builder().token(self.bot_token).build()
@@ -117,6 +120,15 @@ class AdminHandler:
                 ("sessionhelp", self.enhanced_commands.session_help_command),
             ]
             command_handlers.extend(enhanced_handlers)
+            
+            # Add simple session commands for easier user experience
+            simple_handlers = [
+                ("quicksession", self.simple_commands.quick_session_command),
+                ("entercode", self.simple_commands.enter_code_command),
+                ("sessionguide", self.simple_commands.session_guide_command),
+                ("pendingsessions", self.simple_commands.pending_sessions_command),
+            ]
+            command_handlers.extend(simple_handlers)
         
         for command_name, handler_func in command_handlers:
             wrapped_handler = self._wrap_admin_handler(handler_func)

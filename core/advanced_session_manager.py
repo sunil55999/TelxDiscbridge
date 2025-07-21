@@ -131,8 +131,7 @@ class AdvancedSessionManager:
             session_id = await self.database.add_session_info(session_info)
             session_info.id = session_id
             
-            # Create session structure in base session manager
-            await self.base_session_manager.create_session(session_name, phone_number)
+            # Note: Session structure will be created during authentication
             
             logger.info(f"Successfully registered session: {session_name} (ID: {session_id})")
             return True
