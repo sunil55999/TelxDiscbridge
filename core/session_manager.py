@@ -203,7 +203,9 @@ class SessionManager:
                         'session_name': name
                     }
                     
-                    logger.info(f"Verification code sent to {phone_number}, client stored")
+                    logger.info(f"Verification code sent to {phone_number}, client stored with key: {client_key}")
+                    logger.info(f"Stored phone_code_hash: {phone_code_hash}")
+                    logger.info(f"Total pending clients: {len(self.pending_clients)}")
                     return {
                         "success": False, 
                         "needs_code": True, 
@@ -217,6 +219,9 @@ class SessionManager:
             
             else:
                 # Use stored client for verification
+                logger.info(f"Looking for pending client with key: {client_key}")
+                logger.info(f"Available pending clients: {list(self.pending_clients.keys())}")
+                
                 if client_key not in self.pending_clients:
                     logger.error(f"No pending client found for {name}, creating new one")
                     # Fallback: create new client (this might fail but worth trying)
@@ -228,13 +233,18 @@ class SessionManager:
                     await client.connect()
                 else:
                     # Use stored client
+                    logger.info(f"Found pending client for {client_key}, using stored session")
                     client_info = self.pending_clients[client_key]
                     client = client_info['client']
                     stored_phone_code_hash = client_info['phone_code_hash']
                     
+                    logger.info(f"Using stored phone_code_hash: {stored_phone_code_hash}")
+                    
                     # Use stored phone_code_hash if not provided
                     if not phone_code_hash:
                         phone_code_hash = stored_phone_code_hash
+                    
+                    logger.info(f"Final phone_code_hash for verification: {phone_code_hash}")
                 
                 # Verify with code using phone_code_hash
                 try:
