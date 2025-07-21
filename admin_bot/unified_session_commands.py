@@ -235,17 +235,24 @@ class UnifiedSessionCommands:
         """Handle OTP-related callback queries."""
         try:
             query = update.callback_query
+            if not query or not query.data:
+                return
+                
             await query.answer()
             
             callback_data = query.data
+            if ':' not in callback_data:
+                return
+                
             action, verification_id = callback_data.split(':', 1)
             
             if verification_id not in self.pending_verifications:
-                await query.edit_message_text(
-                    "❌ **Verification expired**\n\n"
-                    "This verification session has expired or been completed.\n"
-                    "Please use `/addsession` to start over."
-                )
+                if query.message:
+                    await query.edit_message_text(
+                        "❌ **Verification expired**\n\n"
+                        "This verification session has expired or been completed.\n"
+                        "Please use `/addsession` to start over."
+                    )
                 return
             
             verification_info = self.pending_verifications[verification_id]
@@ -254,7 +261,7 @@ class UnifiedSessionCommands:
             user_id = verification_info['user_id']
             
             # Check if user is authorized
-            if query.from_user.id != user_id:
+            if query.from_user and query.from_user.id != user_id:
                 await query.answer("❌ This verification is not for you", show_alert=True)
                 return
             
@@ -266,31 +273,33 @@ class UnifiedSessionCommands:
                 ]
                 reply_markup = InlineKeyboardMarkup(keyboard)
                 
-                await query.edit_message_text(
-                    f"🔢 **Enter your verification code**\n\n"
-                    f"Session: {session_name}\n"
-                    f"Phone: {phone_number}\n\n"
-                    f"**Send your OTP code as a reply to this message**\n"
-                    f"Example: Just type `12345` and send\n\n"
-                    f"⏰ Waiting for your code...\n"
-                    f"Attempts remaining: {verification_info['max_attempts'] - verification_info['attempts']}",
-                    reply_markup=reply_markup,
-                    parse_mode='Markdown'
-                )
-                
-                # Mark this verification as waiting for OTP input
-                verification_info['waiting_for_otp'] = True
-                verification_info['message_id'] = query.message.message_id
+                if query.message:
+                    await query.edit_message_text(
+                        f"🔢 **Enter your verification code**\n\n"
+                        f"Session: {session_name}\n"
+                        f"Phone: {phone_number}\n\n"
+                        f"**Send your OTP code as a reply to this message**\n"
+                        f"Example: Just type `12345` and send\n\n"
+                        f"⏰ Waiting for your code...\n"
+                        f"Attempts remaining: {verification_info['max_attempts'] - verification_info['attempts']}",
+                        reply_markup=reply_markup,
+                        parse_mode='Markdown'
+                    )
+                    
+                    # Mark this verification as waiting for OTP input
+                    verification_info['waiting_for_otp'] = True
+                    verification_info['message_id'] = query.message.message_id
             
             elif action == "resend_otp":
                 # Resend OTP
-                await query.edit_message_text(
-                    f"🔄 **Resending OTP**\n\n"
-                    f"Session: {session_name}\n"
-                    f"Phone: {phone_number}\n\n"
-                    f"⏳ Requesting new verification code...",
-                    parse_mode='Markdown'
-                )
+                if query.message:
+                    await query.edit_message_text(
+                        f"🔄 **Resending OTP**\n\n"
+                        f"Session: {session_name}\n"
+                        f"Phone: {phone_number}\n\n"
+                        f"⏳ Requesting new verification code...",
+                        parse_mode='Markdown'
+                    )
                 
                 # Attempt to resend OTP
                 auth_result = await self.advanced_session_manager.authenticate_session(
@@ -305,39 +314,46 @@ class UnifiedSessionCommands:
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     
-                    await query.edit_message_text(
-                        f"📱 **New OTP sent**\n\n"
-                        f"Session: {session_name}\n"
-                        f"Phone: {phone_number}\n"
-                        f"📨 Fresh verification code sent\n\n"
-                        f"Click 'Enter OTP Code' when ready.",
-                        reply_markup=reply_markup,
-                        parse_mode='Markdown'
-                    )
+                    if query.message:
+                        await query.edit_message_text(
+                            f"📱 **New OTP sent**\n\n"
+                            f"Session: {session_name}\n"
+                            f"Phone: {phone_number}\n"
+                            f"📨 Fresh verification code sent\n\n"
+                            f"Click 'Enter OTP Code' when ready.",
+                            reply_markup=reply_markup,
+                            parse_mode='Markdown'
+                        )
                 else:
-                    await query.edit_message_text(
-                        f"❌ **Could not resend OTP**\n\n"
-                        f"Failed to send new verification code.\n"
-                        f"Please try `/addsession {session_name} {phone_number}` again."
-                    )
+                    if query.message:
+                        await query.edit_message_text(
+                            f"❌ **Could not resend OTP**\n\n"
+                            f"Failed to send new verification code.\n"
+                            f"Please try `/addsession {session_name} {phone_number}` again."
+                        )
             
             elif action == "cancel_otp":
                 # Cancel the verification
-                await query.edit_message_text(
-                    f"❌ **Verification cancelled**\n\n"
-                    f"Session setup for '{session_name}' has been cancelled.\n"
-                    f"Use `/addsession` to try again."
-                )
+                if query.message:
+                    await query.edit_message_text(
+                        f"❌ **Verification cancelled**\n\n"
+                        f"Session setup for '{session_name}' has been cancelled.\n"
+                        f"Use `/addsession` to try again."
+                    )
                 
                 # Clean up
                 await self._cleanup_verification(verification_id)
         
         except Exception as e:
             logger.error(f"Error in handle_otp_callback: {e}")
-            await query.edit_message_text(
-                "❌ **Error processing request**\n\n"
-                "Please try `/addsession` again."
-            )
+            if query and query.message:
+                try:
+                    await query.edit_message_text(
+                        "❌ **Error processing request**\n\n"
+                        "Please try `/addsession` again."
+                    )
+                except:
+                    pass
     
     async def handle_otp_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle OTP code sent as message."""
@@ -362,11 +378,12 @@ class UnifiedSessionCommands:
             
             # Validate OTP format (typically 5-6 digits)
             if not message_text.isdigit() or len(message_text) < 4 or len(message_text) > 6:
-                await update.message.reply_text(
-                    "❌ **Invalid code format**\n\n"
-                    "Verification codes are usually 4-6 digits.\n"
-                    "Please check and try again."
-                )
+                if update.message:
+                    await update.message.reply_text(
+                        "❌ **Invalid code format**\n\n"
+                        "Verification codes are usually 4-6 digits.\n"
+                        "Please check and try again."
+                    )
                 return True
             
             session_name = verification_info['session_name']
@@ -377,7 +394,8 @@ class UnifiedSessionCommands:
             
             # Delete the OTP message for security
             try:
-                await update.message.delete()
+                if update.message:
+                    await update.message.delete()
             except:
                 pass
             
@@ -385,8 +403,8 @@ class UnifiedSessionCommands:
             try:
                 # Find and update the original message
                 message_id = verification_info.get('message_id')
-                if message_id:
-                    progress_message = await context.bot.edit_message_text(
+                if message_id and update.effective_chat:
+                    await context.bot.edit_message_text(
                         chat_id=update.effective_chat.id,
                         message_id=message_id,
                         text=f"🔄 **Verifying code**\n\n"
@@ -394,13 +412,15 @@ class UnifiedSessionCommands:
                              f"⏳ Checking verification code...",
                         parse_mode='Markdown'
                     )
+                    progress_message = "edited"  # Indicate edit was successful
             except:
-                progress_message = await update.message.reply_text(
-                    f"🔄 **Verifying code**\n\n"
-                    f"Session: {session_name}\n"
-                    f"⏳ Checking verification code...",
-                    parse_mode='Markdown'
-                )
+                if update.message:
+                    progress_message = await update.message.reply_text(
+                        f"🔄 **Verifying code**\n\n"
+                        f"Session: {session_name}\n"
+                        f"⏳ Checking verification code...",
+                        parse_mode='Markdown'
+                    )
             
             # Attempt authentication with OTP
             auth_result = await self.advanced_session_manager.authenticate_session(
@@ -409,16 +429,44 @@ class UnifiedSessionCommands:
             
             if auth_result.get("success"):
                 # Success!
-                await progress_message.edit_text(
-                    f"🎉 **Session '{session_name}' is ready!**\n\n"
-                    f"✅ Verification successful\n"
-                    f"📱 Phone: {phone_number}\n"
-                    f"🚀 Session is active and ready for use\n\n"
-                    f"**What's next?**\n"
-                    f"• Use `/sessionstatus` to check details\n"
-                    f"• Add forwarding pairs with `/addpair`\n"
-                    f"• View help with `/help`"
-                )
+                try:
+                    if progress_message == "edited" and update.effective_chat:
+                        await context.bot.edit_message_text(
+                            chat_id=update.effective_chat.id,
+                            message_id=verification_info.get('message_id'),
+                            text=f"🎉 **Session '{session_name}' is ready!**\n\n"
+                                 f"✅ Verification successful\n"
+                                 f"📱 Phone: {phone_number}\n"
+                                 f"🚀 Session is active and ready for use\n\n"
+                                 f"**What's next?**\n"
+                                 f"• Use `/sessionstatus` to check details\n"
+                                 f"• Add forwarding pairs with `/addpair`\n"
+                                 f"• View help with `/help`"
+                        )
+                    elif progress_message and hasattr(progress_message, 'edit_text'):
+                        await progress_message.edit_text(
+                            f"🎉 **Session '{session_name}' is ready!**\n\n"
+                            f"✅ Verification successful\n"
+                            f"📱 Phone: {phone_number}\n"
+                            f"🚀 Session is active and ready for use\n\n"
+                            f"**What's next?**\n"
+                            f"• Use `/sessionstatus` to check details\n"
+                            f"• Add forwarding pairs with `/addpair`\n"
+                            f"• View help with `/help`"
+                        )
+                except:
+                    # Fallback - send new message
+                    if update.effective_chat:
+                        await update.effective_chat.send_message(
+                            f"🎉 **Session '{session_name}' is ready!**\n\n"
+                            f"✅ Verification successful\n"
+                            f"📱 Phone: {phone_number}\n"
+                            f"🚀 Session is active and ready for use\n\n"
+                            f"**What's next?**\n"
+                            f"• Use `/sessionstatus` to check details\n"
+                            f"• Add forwarding pairs with `/addpair`\n"
+                            f"• View help with `/help`"
+                        )
                 
                 # Clean up verification
                 await self._cleanup_verification(verification_id)
@@ -437,27 +485,71 @@ class UnifiedSessionCommands:
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     
-                    await progress_message.edit_text(
-                        f"❌ **Verification failed**\n\n"
-                        f"Session: {session_name}\n"
-                        f"Error: {error_msg}\n"
-                        f"Attempts remaining: {remaining_attempts}\n\n"
-                        f"Try again with a fresh code or resend OTP.",
-                        reply_markup=reply_markup,
-                        parse_mode='Markdown'
-                    )
+                    try:
+                        if progress_message == "edited" and update.effective_chat:
+                            await context.bot.edit_message_text(
+                                chat_id=update.effective_chat.id,
+                                message_id=verification_info.get('message_id'),
+                                text=f"❌ **Verification failed**\n\n"
+                                     f"Session: {session_name}\n"
+                                     f"Error: {error_msg}\n"
+                                     f"Attempts remaining: {remaining_attempts}\n\n"
+                                     f"Try again with a fresh code or resend OTP.",
+                                reply_markup=reply_markup,
+                                parse_mode='Markdown'
+                            )
+                        elif progress_message and hasattr(progress_message, 'edit_text'):
+                            await progress_message.edit_text(
+                                f"❌ **Verification failed**\n\n"
+                                f"Session: {session_name}\n"
+                                f"Error: {error_msg}\n"
+                                f"Attempts remaining: {remaining_attempts}\n\n"
+                                f"Try again with a fresh code or resend OTP.",
+                                reply_markup=reply_markup,
+                                parse_mode='Markdown'
+                            )
+                    except:
+                        if update.effective_chat:
+                            await update.effective_chat.send_message(
+                                f"❌ **Verification failed**\n\n"
+                                f"Session: {session_name}\n"
+                                f"Error: {error_msg}\n"
+                                f"Attempts remaining: {remaining_attempts}\n\n"
+                                f"Try again with a fresh code or resend OTP.",
+                                reply_markup=reply_markup,
+                                parse_mode='Markdown'
+                            )
                     
                     # Reset waiting state
                     verification_info['waiting_for_otp'] = False
                     
                 else:
                     # Max attempts reached
-                    await progress_message.edit_text(
-                        f"❌ **Verification failed - Max attempts reached**\n\n"
-                        f"Session: {session_name}\n"
-                        f"Too many failed attempts.\n\n"
-                        f"Please use `/addsession {session_name} {phone_number}` to start over."
-                    )
+                    try:
+                        if progress_message == "edited" and update.effective_chat:
+                            await context.bot.edit_message_text(
+                                chat_id=update.effective_chat.id,
+                                message_id=verification_info.get('message_id'),
+                                text=f"❌ **Verification failed - Max attempts reached**\n\n"
+                                     f"Session: {session_name}\n"
+                                     f"Too many failed attempts.\n\n"
+                                     f"Please use `/addsession {session_name} {phone_number}` to start over."
+                            )
+                        elif progress_message and hasattr(progress_message, 'edit_text'):
+                            await progress_message.edit_text(
+                                f"❌ **Verification failed - Max attempts reached**\n\n"
+                                f"Session: {session_name}\n"
+                                f"Too many failed attempts.\n\n"
+                                f"Please use `/addsession {session_name} {phone_number}` to start over."
+                            )
+                    except:
+                        if update.effective_chat:
+                            await update.effective_chat.send_message(
+                                f"❌ **Verification failed - Max attempts reached**\n\n"
+                                f"Session: {session_name}\n"
+                                f"Too many failed attempts.\n\n"
+                                f"Please use `/addsession {session_name} {phone_number}` to start over."
+                            )
                     
                     # Clean up
                     await self._cleanup_verification(verification_id)
@@ -466,11 +558,12 @@ class UnifiedSessionCommands:
             
         except Exception as e:
             logger.error(f"Error in handle_otp_message: {e}")
-            await update.message.reply_text(
-                "❌ **Verification error**\n\n"
-                "An error occurred during verification.\n"
-                "Please try `/addsession` again."
-            )
+            if update.message:
+                await update.message.reply_text(
+                    "❌ **Verification error**\n\n"
+                    "An error occurred during verification.\n"
+                    "Please try `/addsession` again."
+                )
             return True
     
     async def _cleanup_verification(self, verification_id: str):

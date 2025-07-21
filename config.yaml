@@ -14,4 +14,4 @@ enable_poll_forwarding: true
 
 # Admin user IDs - replace with actual Telegram user IDs
 admin_user_ids:
-  - 123456789  # Replace with actual admin user ID
+  - 8070703752  # Replace with actual admin user ID
