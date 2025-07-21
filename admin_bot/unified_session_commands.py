@@ -172,6 +172,10 @@ class UnifiedSessionCommands:
                         'max_attempts': 3
                     }
                     
+                    # Debug logging
+                    logger.info(f"Created verification ID: {verification_id}")
+                    logger.info(f"Total pending verifications: {len(self.pending_verifications)}")
+                    
                     # Create inline keyboard for OTP entry
                     keyboard = [
                         [InlineKeyboardButton("🔢 Enter OTP Code", callback_data=f"enter_otp:{verification_id}")],
@@ -246,7 +250,12 @@ class UnifiedSessionCommands:
                 
             action, verification_id = callback_data.split(':', 1)
             
+            # Debug logging
+            logger.info(f"OTP callback received: action={action}, verification_id={verification_id}")
+            logger.info(f"Pending verifications: {list(self.pending_verifications.keys())}")
+            
             if verification_id not in self.pending_verifications:
+                logger.warning(f"Verification ID {verification_id} not found in pending verifications")
                 if query.message:
                     await query.edit_message_text(
                         "❌ **Verification expired**\n\n"
