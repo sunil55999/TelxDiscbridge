@@ -44,25 +44,29 @@ All required packages are already installed:
 
 ### 2. Configure API Credentials
 
-Set these environment variables with your API credentials:
+1.  Create a `.env` file by copying the example file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  Edit the `.env` file and fill in your API credentials.
 
-```bash
-# Telegram Bot Token (from @BotFather)
-export TELEGRAM_BOT_TOKEN="your_bot_token_here"
+    ```
+    # Telegram Bot Token (from @BotFather)
+    TELEGRAM_BOT_TOKEN=your_bot_token_here
 
-# Discord Bot Token (from Discord Developer Portal)  
-export DISCORD_BOT_TOKEN="your_discord_bot_token_here"
+    # Discord Bot Token (from Discord Developer Portal)
+    DISCORD_BOT_TOKEN=your_discord_bot_token_here
 
-# Telegram API Credentials (from https://my.telegram.org)
-export TELEGRAM_API_ID="your_api_id"
-export TELEGRAM_API_HASH="your_api_hash"
+    # Telegram API Credentials (from https://my.telegram.org)
+    TELEGRAM_API_ID=your_api_id
+    TELEGRAM_API_HASH=your_api_hash
 
-# Admin User IDs (comma-separated Telegram user IDs)
-export ADMIN_USER_IDS="123456789,987654321"
+    # Admin User IDs (comma-separated Telegram user IDs)
+    ADMIN_USER_IDS=123456789,987654321
 
-# Database URL (PostgreSQL recommended for production)
-export DATABASE_URL="postgresql://user:password@localhost/forwarding_bot"
-```
+    # Database URL (PostgreSQL recommended for production)
+    DATABASE_URL=postgresql://user:password@localhost/forwarding_bot
+    ```
 
 ### 3. Run the Bot
 

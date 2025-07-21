@@ -54,22 +54,22 @@ class Settings:
         # Load from environment variables if not set
         if not self.database_url:
             self.database_url = os.getenv('DATABASE_URL', 'sqlite:///forwarding_bot.db')
-        
+
         if not self.telegram_bot_token:
             self.telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN', '')
-            
+
         if not self.discord_bot_token:
             self.discord_bot_token = os.getenv('DISCORD_BOT_TOKEN', '')
-            
+
         if not self.telegram_api_id:
             self.telegram_api_id = os.getenv('TELEGRAM_API_ID', '')
-            
+
         if not self.telegram_api_hash:
             self.telegram_api_hash = os.getenv('TELEGRAM_API_HASH', '')
-            
+
         if not self.encryption_key:
             self.encryption_key = os.getenv('ENCRYPTION_KEY')
-            
+
         # Parse admin user IDs from environment
         admin_ids_env = os.getenv('ADMIN_USER_IDS', '')
         if admin_ids_env and not self.admin_user_ids:
@@ -77,25 +77,45 @@ class Settings:
                 self.admin_user_ids = [int(id_.strip()) for id_ in admin_ids_env.split(',') if id_.strip()]
             except ValueError as e:
                 logger.warning(f"Invalid admin user IDs in environment: {e}")
-    
+
     @classmethod
     def load_from_file(cls, config_path: str) -> 'Settings':
-        """Load settings from YAML configuration file."""
+        """Load settings from a YAML configuration file and environment variables."""
+        # Start with default settings
+        settings = cls()
+
+        # Load from environment variables first
+        settings.database_url = os.getenv('DATABASE_URL', settings.database_url)
+        settings.telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN', settings.telegram_bot_token)
+        settings.discord_bot_token = os.getenv('DISCORD_BOT_TOKEN', settings.discord_bot_token)
+        settings.telegram_api_id = os.getenv('TELEGRAM_API_ID', settings.telegram_api_id)
+        settings.telegram_api_hash = os.getenv('TELEGRAM_API_HASH', settings.telegram_api_hash)
+        settings.encryption_key = os.getenv('ENCRYPTION_KEY', settings.encryption_key)
+
+        admin_ids_env = os.getenv('ADMIN_USER_IDS', '')
+        if admin_ids_env:
+            try:
+                settings.admin_user_ids = [int(id_.strip()) for id_ in admin_ids_env.split(',') if id_.strip()]
+            except ValueError as e:
+                logger.warning(f"Invalid admin user IDs in environment: {e}")
+
+        # Override with YAML config file for non-sensitive settings
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config_data = yaml.safe_load(f) or {}
             
-            # Create settings instance with config data
-            settings = cls(**config_data)
-            logger.info(f"Loaded settings from {config_path}")
-            return settings
+            for key, value in config_data.items():
+                if hasattr(settings, key):
+                    setattr(settings, key, value)
+
+            logger.info(f"Loaded and merged settings from {config_path}")
             
         except FileNotFoundError:
-            logger.warning(f"Config file {config_path} not found, using defaults")
-            return cls()
+            logger.warning(f"Config file {config_path} not found, using environment variables and defaults.")
         except Exception as e:
             logger.error(f"Failed to load config from {config_path}: {e}")
-            return cls()
+
+        return settings
     
     def validate(self) -> List[str]:
         """Validate settings and return list of errors."""

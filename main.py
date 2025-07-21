@@ -9,9 +9,12 @@ import signal
 import sys
 from typing import Dict, List, Optional
 
+from dotenv import load_dotenv
 from loguru import logger
 
 from config.settings import Settings
+
+load_dotenv()
 from core.database import Database
 from core.session_manager import SessionManager
 from core.telegram_source import TelegramSource

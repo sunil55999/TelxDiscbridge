@@ -1,0 +1,24 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Other
+.replit
+forwarding_bot.log
+forwarding_bot.db
+forwarding_bot.db-journal
+*.session
