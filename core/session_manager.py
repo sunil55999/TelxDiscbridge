@@ -16,6 +16,8 @@ class SessionManager:
     
     def __init__(self, database: Database, encryption_key: Optional[str] = None):
         self.database = database
+        # Store active clients for OTP verification
+        self.pending_clients = {}
         
         # Initialize encryption
         if encryption_key:
@@ -169,29 +171,39 @@ class SessionManager:
             import os
             os.makedirs("sessions", exist_ok=True)
             
-            # Create Telethon client
-            client = TelegramClient(
-                f"sessions/{name}",
-                settings.telegram_api_id,
-                settings.telegram_api_hash
-            )
+            client_key = f"{name}_{phone_number}"
             
-            await client.connect()
-            
-            # Check if already authenticated
-            if await client.is_user_authorized():
-                logger.info(f"Session {name} already authenticated")
-                await client.disconnect()
-                return {"success": True}
-            
-            # Start authentication process
+            # If no verification code, start the authentication process
             if not verification_code:
-                # Send code request and store phone_code_hash
+                # Create new client for this session
+                client = TelegramClient(
+                    f"sessions/{name}",
+                    settings.telegram_api_id,
+                    settings.telegram_api_hash
+                )
+                
+                await client.connect()
+                
+                # Check if already authenticated
+                if await client.is_user_authorized():
+                    logger.info(f"Session {name} already authenticated")
+                    await client.disconnect()
+                    return {"success": True}
+                
+                # Send code request and store client + phone_code_hash
                 try:
                     result = await client.send_code_request(phone_number)
                     phone_code_hash = result.phone_code_hash
-                    logger.info(f"Verification code sent to {phone_number}")
-                    await client.disconnect()
+                    
+                    # Store the client and phone_code_hash for later verification
+                    self.pending_clients[client_key] = {
+                        'client': client,
+                        'phone_code_hash': phone_code_hash,
+                        'phone_number': phone_number,
+                        'session_name': name
+                    }
+                    
+                    logger.info(f"Verification code sent to {phone_number}, client stored")
                     return {
                         "success": False, 
                         "needs_code": True, 
@@ -202,7 +214,28 @@ class SessionManager:
                     logger.error(f"Failed to send code to {phone_number}: {e}")
                     await client.disconnect()
                     return {"success": False, "error": f"Failed to send verification code: {e}"}
+            
             else:
+                # Use stored client for verification
+                if client_key not in self.pending_clients:
+                    logger.error(f"No pending client found for {name}, creating new one")
+                    # Fallback: create new client (this might fail but worth trying)
+                    client = TelegramClient(
+                        f"sessions/{name}",
+                        settings.telegram_api_id,
+                        settings.telegram_api_hash
+                    )
+                    await client.connect()
+                else:
+                    # Use stored client
+                    client_info = self.pending_clients[client_key]
+                    client = client_info['client']
+                    stored_phone_code_hash = client_info['phone_code_hash']
+                    
+                    # Use stored phone_code_hash if not provided
+                    if not phone_code_hash:
+                        phone_code_hash = stored_phone_code_hash
+                
                 # Verify with code using phone_code_hash
                 try:
                     await client.sign_in(phone_number, verification_code, phone_code_hash=phone_code_hash)
@@ -214,25 +247,53 @@ class SessionManager:
                         logger.warning(f"Failed to save session data for {name}, but authentication successful")
                     
                     logger.info(f"Successfully authenticated session {name}")
+                    
+                    # Clean up stored client
+                    if client_key in self.pending_clients:
+                        del self.pending_clients[client_key]
+                    
                     await client.disconnect()
                     return {"success": True}
                     
                 except errors.PhoneCodeInvalidError:
                     logger.error(f"Invalid verification code for {name}")
-                    await client.disconnect()
                     return {"success": False, "error": "Invalid verification code"}
                 except errors.PhoneCodeExpiredError:
                     logger.error(f"Verification code expired for {name}")
-                    await client.disconnect()
+                    # Clean up expired client
+                    if client_key in self.pending_clients:
+                        try:
+                            await self.pending_clients[client_key]['client'].disconnect()
+                        except:
+                            pass
+                        del self.pending_clients[client_key]
                     return {"success": False, "error": "Verification code expired"}
                 except Exception as e:
                     logger.error(f"Authentication failed for {name}: {e}")
-                    await client.disconnect()
                     return {"success": False, "error": str(e)}
+                finally:
+                    # Always try to disconnect if we created a new client
+                    if client_key not in self.pending_clients:
+                        try:
+                            await client.disconnect()
+                        except:
+                            pass
             
         except Exception as e:
             logger.error(f"Failed to authenticate session {name}: {e}")
             return {"success": False, "error": str(e)}
+    
+    async def cleanup_pending_client(self, name: str, phone_number: str) -> None:
+        """Clean up a pending client session."""
+        client_key = f"{name}_{phone_number}"
+        if client_key in self.pending_clients:
+            try:
+                client = self.pending_clients[client_key]['client']
+                await client.disconnect()
+                logger.info(f"Disconnected pending client for {name}")
+            except:
+                pass
+            del self.pending_clients[client_key]
     
     async def deactivate_session(self, name: str) -> bool:
         """Deactivate a session without deleting."""
