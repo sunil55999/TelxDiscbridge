@@ -52,7 +52,7 @@ class ForwardingBot:
         await self.database.initialize()
         
         # Initialize session manager
-        self.session_manager = SessionManager(self.database, self.settings)
+        self.session_manager = SessionManager(self.database, self.settings.encryption_key)
         
         # Initialize Telegram source client
         self.telegram_source = TelegramSource(self.session_manager, self.database)

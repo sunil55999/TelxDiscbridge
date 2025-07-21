@@ -1,0 +1,33 @@
+Add full support for multiple Telegram user sessions:
+
+1. **Session Abstraction**
+   - Refactor pair configuration so every forwarding pair includes a `session_id` or reference to its session object/file.
+   - Store all available sessions in a secure, centrally managed location, with meta-information such as status, associations, and last verification time.
+   
+2. **Session Lifecycle Management**
+   - Implement admin commands for session registration (creation), deletion, authentication, and health verification.
+   - When adding or editing pairs, allow assignment to any active session.
+   - For automated cleanup, periodically check session validity and notify admin of expired/unhealthy sessions.
+
+3. **Bulk Session Reassignment**
+   - Provide a command (e.g., `/changesession <session_id> pair1,pair2,...`) to switch a group of pairs to a different session in a single operation.
+   - Confirm before and after: session health, destination/channel access, and effect on in-flight messages.
+   - Log all session assignment changes for auditing.
+
+4. **Worker Segregation**
+   - Each group of 20–30 pairs per session must run in its own process or async group.
+   - On session rotation or failure, restart only affected workers without impacting unrelated pairs.
+
+5. **Security & Configuration**
+   - Encrypt all session files and store credentials securely.
+   - Restrict session assignment and admin actions to whitelisted Telegram user IDs.
+   - Document session operations in local or in-bot help documentation.
+
+6. **Extensible Architecture**
+   - Design session management for modular extensibility: allow for future plug-ins (e.g., session pooling, auto-rotation, per-pair health fallback).
+
+7. **Testing**
+   - Include unit/integration tests for adding, reassigning, failing, and recovering sessions.
+   - Simulate permission loss and recovery to verify end-to-end robustness.
+
+By following these guidelines, the bot should seamlessly and securely manage dozens of concurrent Telegram sessions across hundreds of forwarding pairs, allowing for dynamic scaling and administration.
