@@ -12,8 +12,7 @@ from core.database import Database
 from core.session_manager import SessionManager
 from core.advanced_session_manager import AdvancedSessionManager
 from admin_bot.commands import AdminCommands
-from admin_bot.enhanced_commands import EnhancedAdminCommands
-from admin_bot.simple_session_commands import SimpleSessionCommands
+from admin_bot.unified_session_commands import UnifiedSessionCommands
 
 
 class AdminHandler:
@@ -27,8 +26,7 @@ class AdminHandler:
         self.admin_user_ids = set(admin_user_ids)
         self.application: Optional[Application] = None
         self.commands: Optional[AdminCommands] = None
-        self.enhanced_commands: Optional[EnhancedAdminCommands] = None
-        self.simple_commands: Optional[SimpleSessionCommands] = None
+        self.unified_commands: Optional[UnifiedSessionCommands] = None
         self.running = False
     
     async def start(self):
@@ -43,8 +41,7 @@ class AdminHandler:
             # Initialize commands handlers
             self.commands = AdminCommands(self.database, self.session_manager)
             if self.advanced_session_manager:
-                self.enhanced_commands = EnhancedAdminCommands(self.database, self.advanced_session_manager)
-                self.simple_commands = SimpleSessionCommands(self.database, self.advanced_session_manager)
+                self.unified_commands = UnifiedSessionCommands(self.database, self.advanced_session_manager)
             
             # Create application
             self.application = Application.builder().token(self.bot_token).build()
@@ -107,28 +104,12 @@ class AdminHandler:
             ("blockword", self.commands.blockword_command),
         ]
         
-        # Add enhanced session management commands if available
-        if self.enhanced_commands:
-            enhanced_handlers = [
-                ("registersession", self.enhanced_commands.register_session_command),
-                ("authenticate", self.enhanced_commands.authenticate_session_command),
-                ("sessionstatus", self.enhanced_commands.session_status_command),
-                ("sessionhealth", self.enhanced_commands.session_health_command),
-                ("deletesession", self.enhanced_commands.delete_session_command),
-                ("optimalsession", self.enhanced_commands.optimal_session_command),
-                ("workerstatus", self.enhanced_commands.worker_status_command),
-                ("sessionhelp", self.enhanced_commands.session_help_command),
+        # Add unified session management command
+        if self.unified_commands:
+            unified_handlers = [
+                ("addsession", self.unified_commands.addsession_command),
             ]
-            command_handlers.extend(enhanced_handlers)
-            
-            # Add simple session commands for easier user experience
-            simple_handlers = [
-                ("quicksession", self.simple_commands.quick_session_command),
-                ("entercode", self.simple_commands.enter_code_command),
-                ("sessionguide", self.simple_commands.session_guide_command),
-                ("pendingsessions", self.simple_commands.pending_sessions_command),
-            ]
-            command_handlers.extend(simple_handlers)
+            command_handlers.extend(unified_handlers)
         
         for command_name, handler_func in command_handlers:
             wrapped_handler = self._wrap_admin_handler(handler_func)
@@ -138,15 +119,23 @@ class AdminHandler:
         wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
         self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
         
-        # Add enhanced callback handlers if available
-        if self.enhanced_commands:
-            enhanced_callback_handler = self._wrap_admin_handler(self.enhanced_commands.handle_delete_session_callback)
-            self.application.add_handler(CallbackQueryHandler(enhanced_callback_handler, pattern="delete_session_"))
+        # Add unified session callback handlers
+        if self.unified_commands:
+            otp_callback_handler = self._wrap_admin_handler(self.unified_commands.handle_otp_callback)
+            self.application.add_handler(CallbackQueryHandler(otp_callback_handler, pattern="^(enter_otp|resend_otp|cancel_otp):"))
         
-        # Add message handler for unknown commands
-        self.application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, self._wrap_admin_handler(self._handle_unknown_message))
-        )
+        # Add message handler for OTP codes and unknown messages
+        if self.unified_commands:
+            # Handler for OTP messages (higher priority)
+            otp_message_handler = self._wrap_admin_handler(self._handle_otp_or_unknown_message)
+            self.application.add_handler(
+                MessageHandler(filters.TEXT & ~filters.COMMAND, otp_message_handler)
+            )
+        else:
+            # Handler for unknown messages only
+            self.application.add_handler(
+                MessageHandler(filters.TEXT & ~filters.COMMAND, self._wrap_admin_handler(self._handle_unknown_message))
+            )
         
         logger.info("Admin bot handlers setup complete")
     
@@ -181,6 +170,17 @@ class AdminHandler:
         await update.message.reply_text(
             "❓ I don't understand that message. Use /help to see available commands."
         )
+    
+    async def _handle_otp_or_unknown_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle OTP codes or unknown messages."""
+        if self.unified_commands:
+            # Try to handle as OTP first
+            handled = await self.unified_commands.handle_otp_message(update, context)
+            if not handled:
+                # Not an OTP message, treat as unknown
+                await self._handle_unknown_message(update, context)
+        else:
+            await self._handle_unknown_message(update, context)
     
     def add_admin_user(self, user_id: int):
         """Add a new admin user."""

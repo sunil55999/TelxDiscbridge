@@ -12,6 +12,6 @@ enable_media_forwarding: true
 enable_sticker_forwarding: true 
 enable_poll_forwarding: true
 
-# Example admin user IDs (set these via environment variables)
-# admin_user_ids:
-#   - 123456789
+# Admin user IDs - replace with actual Telegram user IDs
+admin_user_ids:
+  - 123456789  # Replace with actual admin user ID

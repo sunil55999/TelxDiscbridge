@@ -28,6 +28,15 @@ Preferred communication style: Simple, everyday language.
 ✓ Added step-by-step session help guide with `/sessionhelp` command
 ✓ Improved error handling and user guidance for authentication issues
 
+**July 21, 2025 - Unified Session Management (Latest)**
+✓ Consolidated multiple session commands into single `/addsession` command
+✓ Removed redundant commands (`/registersession`, `/authenticate`, `/quicksession`, `/entercode`, etc.)
+✓ Implemented robust OTP verification process with interactive buttons
+✓ Added comprehensive help and validation with user-friendly language
+✓ Enhanced error handling with automatic session cleanup on failure
+✓ Simplified workflow: register → send OTP → verify → ready to use
+✓ Improved user experience with step-by-step guidance and examples
+
 ## System Architecture
 
 The application follows a modular, asynchronous architecture built around Python's asyncio framework. The system is designed to handle multiple forwarding pairs efficiently using worker processes and provides administrative control through Telegram bot commands.

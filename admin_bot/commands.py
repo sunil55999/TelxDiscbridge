@@ -31,7 +31,7 @@ class AdminCommands:
             "/removepair - Remove a forwarding pair\n"
             "/editpair - Edit a forwarding pair\n"
             "/status - Show system status\n"
-            "/sessions - Manage sessions\n"
+            "/addsession - Add a new Telegram session\n"
             "/filters - Manage keyword filters\n"
             "/help - Show detailed help\n\n"
             f"Your user ID: `{user_id}`"
@@ -51,9 +51,9 @@ class AdminCommands:
             "• `/editpair [pair_id]` - Edit pair settings\n\n"
             
             "**Session Management:**\n"
-            "• `/sessions` - List all available sessions\n"
+            "• `/addsession <name> <phone>` - Add new Telegram session with OTP verification\n"
             "• `/changesession [pair_id] [session_name]` - Change session for a pair\n"
-            "• `/testsession [session_name]` - Test session connectivity\n\n"
+            "• `/sessions` - List all available sessions\n\n"
             
             "**System Management:**\n"
             "• `/status` - Show system status and statistics\n"
@@ -65,7 +65,9 @@ class AdminCommands:
             "• `/allowword [pair_id] [word]` - Remove word block\n"
             "• `/listfilters [pair_id]` - Show filters for a pair\n\n"
             
-            "Use commands without parameters for interactive mode."
+            "Use commands without parameters for interactive mode.\n\n"
+            
+            "**Need help with sessions?** Use `/addsession` without parameters for a complete guide!"
         )
         
         await update.message.reply_text(help_text, parse_mode='Markdown')
