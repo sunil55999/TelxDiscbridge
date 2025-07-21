@@ -159,7 +159,7 @@ class SessionManager:
             logger.error(f"Failed to create session {name}: {e}")
             return False
     
-    async def authenticate_session(self, name: str, phone_number: str, verification_code: Optional[str] = None) -> Dict[str, Any]:
+    async def authenticate_session(self, name: str, phone_number: str, verification_code: Optional[str] = None, phone_code_hash: Optional[str] = None) -> Dict[str, Any]:
         """Authenticate a session with Telegram."""
         try:
             from config.settings import Settings
@@ -186,20 +186,26 @@ class SessionManager:
             
             # Start authentication process
             if not verification_code:
-                # Send code request
+                # Send code request and store phone_code_hash
                 try:
-                    await client.send_code_request(phone_number)
+                    result = await client.send_code_request(phone_number)
+                    phone_code_hash = result.phone_code_hash
                     logger.info(f"Verification code sent to {phone_number}")
                     await client.disconnect()
-                    return {"success": False, "needs_code": True, "message": "Check your phone for verification code"}
+                    return {
+                        "success": False, 
+                        "needs_code": True, 
+                        "phone_code_hash": phone_code_hash,
+                        "message": "Check your phone for verification code"
+                    }
                 except Exception as e:
                     logger.error(f"Failed to send code to {phone_number}: {e}")
                     await client.disconnect()
                     return {"success": False, "error": f"Failed to send verification code: {e}"}
             else:
-                # Verify with code
+                # Verify with code using phone_code_hash
                 try:
-                    await client.sign_in(phone_number, verification_code)
+                    await client.sign_in(phone_number, verification_code, phone_code_hash=phone_code_hash)
                     
                     # Save session data
                     session_string = client.session.save()

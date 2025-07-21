@@ -166,6 +166,7 @@ class UnifiedSessionCommands:
                     self.pending_verifications[verification_id] = {
                         'session_name': session_name,
                         'phone_number': phone_number,
+                        'phone_code_hash': auth_result.get("phone_code_hash"),
                         'user_id': user_id,
                         'created_at': datetime.now(),
                         'attempts': 0,
@@ -431,9 +432,10 @@ class UnifiedSessionCommands:
                         parse_mode='Markdown'
                     )
             
-            # Attempt authentication with OTP
+            # Attempt authentication with OTP using stored phone_code_hash
+            phone_code_hash = verification_info.get('phone_code_hash')
             auth_result = await self.advanced_session_manager.authenticate_session(
-                session_name, phone_number, message_text
+                session_name, phone_number, message_text, phone_code_hash
             )
             
             if auth_result.get("success"):

@@ -140,7 +140,7 @@ class AdvancedSessionManager:
             logger.error(f"Failed to register session {session_name}: {e}")
             return False
     
-    async def authenticate_session(self, session_name: str, phone_number: str, verification_code: Optional[str] = None) -> Dict[str, Any]:
+    async def authenticate_session(self, session_name: str, phone_number: str, verification_code: Optional[str] = None, phone_code_hash: Optional[str] = None) -> Dict[str, Any]:
         """Authenticate a session with Telegram."""
         try:
             # Check if session exists in database
@@ -151,7 +151,7 @@ class AdvancedSessionManager:
             
             # Use base session manager for authentication
             auth_result = await self.base_session_manager.authenticate_session(
-                session_name, phone_number, verification_code
+                session_name, phone_number, verification_code, phone_code_hash
             )
             
             if auth_result.get("success"):
@@ -177,7 +177,12 @@ class AdvancedSessionManager:
             elif auth_result.get("needs_code"):
                 # OTP verification needed
                 logger.info(f"OTP verification required for session: {session_name}")
-                return {"success": False, "needs_otp": True, "message": "Please check your phone for verification code"}
+                return {
+                    "success": False, 
+                    "needs_otp": True, 
+                    "phone_code_hash": auth_result.get("phone_code_hash"),
+                    "message": "Please check your phone for verification code"
+                }
             
             else:
                 # Authentication failed
