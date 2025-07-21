@@ -1,233 +1,194 @@
 # Telegram → Discord → Telegram Forwarding Bot
 
-A comprehensive Python-based message forwarding bot that creates a bridge between Telegram and Discord platforms. The system receives messages from Telegram source chats (via user sessions), relays them through Discord channels, and then forwards them to Telegram destination chats.
+A sophisticated Python-based message forwarding bot that creates a bridge between Telegram and Discord platforms with advanced multi-session management capabilities.
 
-## Features
+## 🚀 Quick Start
 
-- **Multi-Platform Bridge**: Seamlessly forward messages from Telegram → Discord → Telegram
-- **Session Management**: Secure encrypted storage of Telegram user sessions  
-- **Admin Interface**: Comprehensive Telegram bot commands for managing forwarding pairs
-- **Media Support**: Forward photos, documents, videos, audio, stickers, and polls
-- **Message Filtering**: Keyword-based filtering and spam detection
-- **Database Persistence**: PostgreSQL support for production deployments
-- **Worker Architecture**: Scalable design supporting 20-30 pairs per worker process
-- **Real-time Monitoring**: Health checks and system status monitoring
-
-## Architecture
-
-### Core Components
-
-- **MessageOrchestrator**: Central coordinator managing message flow
-- **TelegramSource**: Handles incoming messages using Telethon user sessions
-- **DiscordRelay**: Manages Discord bot interactions for message relay
-- **TelegramDestination**: Sends messages to destination chats using Bot API
-- **AdminHandler**: Telegram bot interface for configuration and monitoring
-- **SessionManager**: Encrypted session storage with Fernet encryption
-
-### Data Flow
-
-1. **Telegram Source → Discord**: User session receives messages → Format conversion → Discord channel
-2. **Discord → Telegram Destination**: Discord bot monitors channels → Format messages → Bot API sends to destination
-3. **Admin Control**: Telegram admin bot manages pairs, sessions, and monitoring
-
-## Quick Start
-
-### 1. Install Dependencies
-
-All required packages are already installed:
-- telethon (Telegram user sessions)
-- python-telegram-bot (Bot API)
-- discord.py (Discord bot)
-- SQLAlchemy (Database ORM)
-- cryptography (Session encryption)
-- loguru (Logging)
-
-### 2. Configure API Credentials
-
-Set these environment variables with your API credentials:
-
+### 1. Clone and Setup
 ```bash
-# Telegram Bot Token (from @BotFather)
-export TELEGRAM_BOT_TOKEN="your_bot_token_here"
-
-# Discord Bot Token (from Discord Developer Portal)  
-export DISCORD_BOT_TOKEN="your_discord_bot_token_here"
-
-# Telegram API Credentials (from https://my.telegram.org)
-export TELEGRAM_API_ID="your_api_id"
-export TELEGRAM_API_HASH="your_api_hash"
-
-# Admin User IDs (comma-separated Telegram user IDs)
-export ADMIN_USER_IDS="123456789,987654321"
-
-# Database URL (PostgreSQL recommended for production)
-export DATABASE_URL="postgresql://user:password@localhost/forwarding_bot"
+git clone <repository-url>
+cd telegram-discord-forwarding-bot
 ```
 
-### 3. Run the Bot
-
+### 2. Install Dependencies
 ```bash
-python main.py
+pip install -r requirements.txt
+# or with uv
+uv install
 ```
 
-## Getting API Credentials
+### 3. Configure Environment Variables
+```bash
+# Copy example configuration
+cp .env.example .env
 
-### Telegram Bot Token
-1. Message @BotFather on Telegram
-2. Use `/newbot` command
-3. Follow instructions to create your bot
-4. Copy the bot token
+# Edit .env with your API credentials
+nano .env
+```
 
-### Discord Bot Token  
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create "New Application" 
-3. Go to "Bot" section
-4. Click "Add Bot"
-5. Copy the bot token
-6. Enable required bot permissions (Send Messages, Embed Links, Attach Files)
+### 4. Run the Bot
+```bash
+python3 main.py
+```
 
-### Telegram API Credentials
-1. Visit [https://my.telegram.org](https://my.telegram.org)
-2. Log in with your phone number
-3. Go to "API development tools"
-4. Create a new application
-5. Copy the `api_id` and `api_hash`
+## 📋 Prerequisites
 
-### Admin User IDs
-1. Message @userinfobot on Telegram
-2. It will reply with your user ID
-3. Add any additional admin user IDs
+### Required API Credentials
+- **Telegram Bot Token** - Get from [@BotFather](https://t.me/BotFather)
+- **Telegram API Credentials** - Get from [my.telegram.org](https://my.telegram.org)
+- **Discord Bot Token** - Get from [Discord Developer Portal](https://discord.com/developers/applications)
+- **Admin User ID** - Your Telegram user ID
 
-## Usage
+### System Requirements
+- Python 3.9+
+- SQLite/PostgreSQL database
+- Stable internet connection
+
+## 🔧 Configuration
+
+### Environment Variables
+All configuration is managed through environment variables. See [Environment Setup Guide](docs/environment_setup.md) for detailed instructions.
+
+**Required Variables:**
+```env
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_API_ID=your_api_id  
+TELEGRAM_API_HASH=your_api_hash
+DISCORD_BOT_TOKEN=your_discord_token
+ADMIN_USER_IDS=123456789
+```
+
+**Optional Variables:**
+```env
+DATABASE_URL=sqlite:///forwarding_bot.db
+LOG_LEVEL=INFO
+MAX_PAIRS_PER_WORKER=25
+ENABLE_MEDIA_FORWARDING=true
+```
+
+## 📱 Usage
+
+### Adding Sessions
+Use the unified session management command:
+```
+/addsession my_session +1234567890
+```
+
+The bot will:
+1. Register your session
+2. Send OTP to your phone
+3. Guide you through verification
+4. Activate the session for use
+
+### Managing Forwarding Pairs
+```
+/addpair - Add new forwarding pair
+/listpairs - View all pairs
+/removepair - Delete a pair
+/status - Check system status
+```
 
 ### Admin Commands
-
-Once configured, message your admin bot with these commands:
-
-- `/start` - Welcome message and help
-- `/help` - Show all available commands
-- `/status` - System status and statistics
-- `/add_pair` - Add new forwarding pair (interactive)
-- `/list_pairs` - Show all forwarding pairs
-- `/delete_pair <id>` - Remove forwarding pair
-- `/toggle_pair <id>` - Enable/disable pair
-- `/add_session` - Add new Telegram user session
-- `/list_sessions` - Show available sessions
-- `/test_pair <id>` - Test pair connectivity
-
-### Adding Forwarding Pairs
-
-1. Use `/add_pair` command in admin bot
-2. Provide required information:
-   - **Pair name**: Descriptive name for the pair
-   - **Telegram source chat ID**: Source chat/channel ID
-   - **Discord channel ID**: Discord channel for relay
-   - **Telegram destination chat ID**: Destination chat/channel ID
-   - **Session name**: Telegram user session to use
-
-### Session Management
-
-Sessions are encrypted user sessions that allow the bot to receive messages from Telegram chats:
-
-1. Use `/add_session` to start session creation
-2. Follow the authentication process (phone number, code, password if needed)
-3. Session data is encrypted and stored securely
-4. Use sessions in forwarding pairs to access specific chats
-
-## Configuration
-
-The `config.yaml` file contains optional settings that override defaults:
-
-```yaml
-# Performance settings
-max_pairs_per_worker: 25
-message_rate_limit: 30
-max_file_size_mb: 50
-
-# Feature toggles
-enable_media_forwarding: true
-enable_sticker_forwarding: true 
-enable_poll_forwarding: true
-
-# Logging
-log_level: "INFO"
+```
+/help - Show all commands
+/addsession - Add new Telegram session
+/sessions - List available sessions  
+/changesession - Change pair session
 ```
 
-## Database Schema
+## 🏗️ Architecture
 
-### ForwardingPair
-- Stores forwarding pair configurations
-- Links source chat → Discord channel → destination chat
-- Includes filtering rules and media settings
+### Core Components
+- **Message Orchestrator** - Central message flow coordinator
+- **Session Manager** - Secure Telegram session handling
+- **Database Layer** - SQLAlchemy-based data persistence
+- **Admin Interface** - Telegram bot for configuration
+- **Environment Loader** - Flexible configuration management
 
-### MessageMapping  
-- Maps message IDs between platforms
-- Enables proper reply threading
-- Automatic cleanup of old mappings
+### Platform Handlers
+- **Telegram Source** - Receives messages via Telethon
+- **Discord Relay** - Forwards through Discord channels
+- **Telegram Destination** - Sends to target Telegram chats
 
-### Sessions
-- Encrypted Telegram user session storage
-- Session validation and management
-- Secure encryption with Fernet
+### Advanced Features
+- **Multi-Session Support** - Handle multiple Telegram accounts
+- **Worker Segregation** - Isolated processing groups
+- **Health Monitoring** - Continuous session health checks
+- **Bulk Operations** - Efficient pair management
+- **Security** - Encrypted session storage
 
-## Security Features
+## 📚 Documentation
 
-- **Session Encryption**: All Telegram session data encrypted with Fernet
-- **Admin Authorization**: Command access restricted to configured admin users
-- **Data Isolation**: Each session runs in isolated context
-- **Secure Storage**: Sensitive data never logged or exposed
+- [Environment Setup Guide](docs/environment_setup.md) - Complete configuration guide
+- [Unified Session Guide](docs/unified_session_guide.md) - Session management help
+- [Advanced Session Management](docs/advanced_session_management.md) - Technical details
 
-## Monitoring & Health Checks
+## 🚀 Deployment
 
-- Real-time system status monitoring
-- Component health verification
-- Message flow statistics
-- Automatic session validation
-- Database cleanup and maintenance
+### Local Development
+Use `.env` file for configuration:
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+python3 main.py
+```
 
-## Troubleshooting
+### Production (Replit)
+1. Set environment variables in Replit Secrets
+2. Deploy directly - no additional setup needed
 
-### Common Issues
+### Docker
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY . .
+RUN pip install -r requirements.txt
+CMD ["python3", "main.py"]
+```
 
-**"Configuration validation failed"**
-- Ensure all required environment variables are set
-- Check that API tokens are valid and not expired
+### Heroku
+```bash
+heroku config:set TELEGRAM_BOT_TOKEN=your_token
+heroku config:set TELEGRAM_API_ID=your_api_id
+# ... set all required variables
+git push heroku main
+```
 
-**"Session not found"**  
-- Add user sessions using `/add_session` command
-- Verify session names match in forwarding pairs
+## 🔒 Security
 
-**"Discord channel access denied"**
-- Ensure Discord bot has proper permissions
-- Check that channel IDs are correct
+- All API credentials stored as environment variables
+- Session files encrypted with master key
+- Admin access controlled by user ID whitelist
+- Automatic cleanup of failed authentications
+- No sensitive data in version control
 
-**"Database connection failed"**
-- Verify DATABASE_URL is correct
-- Ensure PostgreSQL server is running
+## 🤝 Contributing
 
-### Logs
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if needed
+5. Submit a pull request
 
-Check application logs for detailed error information:
-- Console output shows real-time status
-- File logs (if configured) contain detailed debugging info
-- Admin bot provides status updates and error notifications
+## 📄 License
 
-## Production Deployment
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-For production use:
-- Use PostgreSQL database (not SQLite)
-- Configure proper logging levels  
-- Set up process supervision (systemd, supervisor, PM2)
-- Monitor system resources and performance
-- Regular database backups
-- Session key backup and rotation
+## 📞 Support
 
-## Support
+- Check the documentation in `/docs` folder
+- Review environment setup guide
+- Verify API credentials are correct
+- Check logs for specific error messages
 
-The system provides comprehensive error reporting and status monitoring through:
-- Console logging with configurable levels
-- Admin bot notifications for critical issues  
-- Health check endpoints for monitoring systems
-- Database query monitoring and optimization
+## 🎯 Features
 
-For additional help, check the admin bot `/help` command or review the application logs for specific error details.
+✅ **Multi-Platform Forwarding** - Telegram ↔ Discord ↔ Telegram  
+✅ **Advanced Session Management** - Multiple Telegram accounts  
+✅ **Interactive Setup** - Step-by-step session configuration  
+✅ **Environment Variables** - Secure configuration management  
+✅ **Health Monitoring** - Automatic session health checks  
+✅ **Worker Segregation** - Isolated processing for scalability  
+✅ **Media Support** - Forward images, videos, documents  
+✅ **Admin Interface** - Complete bot management via Telegram  
+✅ **Production Ready** - Supports Docker, Heroku, Replit deployments

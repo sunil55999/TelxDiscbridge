@@ -10,6 +10,7 @@ import sys
 from typing import Dict, List, Optional
 
 from loguru import logger
+# Environment variables will be loaded by the Settings class
 
 from config.settings import Settings
 from core.database import Database

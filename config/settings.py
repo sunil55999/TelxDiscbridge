@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 import yaml
 from loguru import logger
+from .env_loader import EnvLoader
 
 
 @dataclass
@@ -50,51 +51,69 @@ class Settings:
     max_file_size_mb: int = 50
     
     def __post_init__(self):
-        """Post-initialization validation."""
-        # Load from environment variables if not set
+        """Post-initialization validation and environment variable loading."""
+        # Initialize environment loader
+        EnvLoader.load()
+        
+        # Core API credentials - load from environment if not set
         if not self.database_url:
-            self.database_url = os.getenv('DATABASE_URL', 'sqlite:///forwarding_bot.db')
+            self.database_url = EnvLoader.get_str('DATABASE_URL', 'sqlite:///forwarding_bot.db')
         
         if not self.telegram_bot_token:
-            self.telegram_bot_token = os.getenv('TELEGRAM_BOT_TOKEN', '')
+            self.telegram_bot_token = EnvLoader.get_str('TELEGRAM_BOT_TOKEN')
             
         if not self.discord_bot_token:
-            self.discord_bot_token = os.getenv('DISCORD_BOT_TOKEN', '')
+            self.discord_bot_token = EnvLoader.get_str('DISCORD_BOT_TOKEN')
             
         if not self.telegram_api_id:
-            self.telegram_api_id = os.getenv('TELEGRAM_API_ID', '')
+            self.telegram_api_id = EnvLoader.get_str('TELEGRAM_API_ID')
             
         if not self.telegram_api_hash:
-            self.telegram_api_hash = os.getenv('TELEGRAM_API_HASH', '')
+            self.telegram_api_hash = EnvLoader.get_str('TELEGRAM_API_HASH')
             
         if not self.encryption_key:
-            self.encryption_key = os.getenv('ENCRYPTION_KEY')
+            self.encryption_key = EnvLoader.get_str('ENCRYPTION_KEY')
             
-        # Parse admin user IDs from environment
-        admin_ids_env = os.getenv('ADMIN_USER_IDS', '')
-        if admin_ids_env and not self.admin_user_ids:
-            try:
-                self.admin_user_ids = [int(id_.strip()) for id_ in admin_ids_env.split(',') if id_.strip()]
-            except ValueError as e:
-                logger.warning(f"Invalid admin user IDs in environment: {e}")
+        # Load admin user IDs from environment
+        if not self.admin_user_ids:
+            self.admin_user_ids = EnvLoader.get_int_list('ADMIN_USER_IDS')
+        
+        # Load configuration settings from environment
+        self.log_level = EnvLoader.get_str('LOG_LEVEL', self.log_level)
+        self.log_file = EnvLoader.get_str('LOG_FILE', self.log_file)
+        
+        # Load numeric settings
+        self.max_pairs_per_worker = EnvLoader.get_int('MAX_PAIRS_PER_WORKER', self.max_pairs_per_worker)
+        self.worker_timeout = EnvLoader.get_int('WORKER_TIMEOUT', self.worker_timeout)
+        self.message_rate_limit = EnvLoader.get_int('MESSAGE_RATE_LIMIT', self.message_rate_limit)
+        self.max_file_size_mb = EnvLoader.get_int('MAX_FILE_SIZE_MB', self.max_file_size_mb)
+        
+        # Load feature toggles
+        self.enable_media_forwarding = EnvLoader.get_bool('ENABLE_MEDIA_FORWARDING', self.enable_media_forwarding)
+        self.enable_sticker_forwarding = EnvLoader.get_bool('ENABLE_STICKER_FORWARDING', self.enable_sticker_forwarding)
+        self.enable_poll_forwarding = EnvLoader.get_bool('ENABLE_POLL_FORWARDING', self.enable_poll_forwarding)
     
     @classmethod
     def load_from_file(cls, config_path: str) -> 'Settings':
-        """Load settings from YAML configuration file."""
+        """Load settings from YAML configuration file and environment variables."""
         try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                config_data = yaml.safe_load(f) or {}
+            # First load YAML config as base
+            config_data = {}
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_data = yaml.safe_load(f) or {}
+                logger.info(f"Loaded YAML config from {config_path}")
+            except FileNotFoundError:
+                logger.info(f"Config file {config_path} not found, using environment variables and defaults")
             
-            # Create settings instance with config data
+            # Create settings instance with config data - post_init will load env vars
             settings = cls(**config_data)
-            logger.info(f"Loaded settings from {config_path}")
+            logger.info("Settings loaded successfully with environment variable overrides")
             return settings
             
-        except FileNotFoundError:
-            logger.warning(f"Config file {config_path} not found, using defaults")
-            return cls()
         except Exception as e:
-            logger.error(f"Failed to load config from {config_path}: {e}")
+            logger.error(f"Failed to load config: {e}")
+            # Fallback to environment only
             return cls()
     
     def validate(self) -> List[str]:
