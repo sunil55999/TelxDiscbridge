@@ -115,14 +115,14 @@ class AdminHandler:
             wrapped_handler = self._wrap_admin_handler(handler_func)
             self.application.add_handler(CommandHandler(command_name, wrapped_handler))
         
-        # Add callback query handlers
-        wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
-        self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
-        
-        # Add unified session callback handlers
+        # Add unified session callback handlers FIRST (more specific patterns)
         if self.unified_commands:
             otp_callback_handler = self._wrap_admin_handler(self.unified_commands.handle_otp_callback)
             self.application.add_handler(CallbackQueryHandler(otp_callback_handler, pattern="^(enter_otp|resend_otp|cancel_otp):"))
+        
+        # Add general callback query handlers LAST (catch-all)
+        wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
+        self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
         
         # Add message handler for OTP codes and unknown messages
         if self.unified_commands:
@@ -145,11 +145,16 @@ class AdminHandler:
             try:
                 user_id = update.effective_user.id
                 
+                # Debug logging for callbacks
+                if update.callback_query:
+                    logger.info(f"Callback received: {update.callback_query.data} from user {user_id}")
+                
                 # Check if user is admin
                 if user_id not in self.admin_user_ids:
-                    await update.effective_message.reply_text(
-                        "❌ Access denied. You are not authorized to use this bot."
-                    )
+                    if update.effective_message:
+                        await update.effective_message.reply_text(
+                            "❌ Access denied. You are not authorized to use this bot."
+                        )
                     logger.warning(f"Unauthorized access attempt from user {user_id}")
                     return
                 
@@ -159,7 +164,8 @@ class AdminHandler:
             except Exception as e:
                 logger.error(f"Error in admin handler: {e}")
                 try:
-                    await update.effective_message.reply_text(f"❌ An error occurred: {e}")
+                    if update.effective_message:
+                        await update.effective_message.reply_text(f"❌ An error occurred: {e}")
                 except:
                     pass  # Ignore errors when sending error messages
         
