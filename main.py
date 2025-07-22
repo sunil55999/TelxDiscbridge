@@ -65,10 +65,15 @@ class ForwardingBot:
         
         # Initialize Telegram destination service (uses per-pair bot tokens)
         from utils.encryption import EncryptionManager
+        from core.message_filter import MessageFilter
         encryption_manager = EncryptionManager(self.settings.encryption_key)
         self.telegram_destination = TelegramDestination(
             self.database, encryption_manager
         )
+        
+        # Initialize message filter
+        self.message_filter = MessageFilter(self.database)
+        await self.message_filter.initialize()
         
         # Initialize Discord relay
         self.discord_relay = DiscordRelay(
