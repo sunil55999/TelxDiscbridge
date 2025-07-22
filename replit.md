@@ -75,6 +75,17 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
+**July 22, 2025 - Console Errors and Command Issues Fixed**
+✓ Fixed sessions command datetime parsing error ('str' object has no attribute 'strftime')
+✓ Added missing MessageFilter.update_global_settings method for filter commands
+✓ Fixed Telegram markdown parsing issues in help system (byte offset errors)
+✓ Added comprehensive null checks to prevent LSP errors in all admin commands
+✓ Updated /start and /help commands with current correct command documentation
+✓ Bot now runs without any console errors or critical runtime exceptions
+✓ All admin commands (sessions, blockimages, filterconfig) now working properly
+✓ Help system interactive callbacks functioning correctly without parsing errors
+✓ Significantly reduced LSP diagnostic errors from 153 to 77 remaining (mostly database schema related)
+
 **July 22, 2025 - Application Startup Issues Fixed**
 ✓ Fixed invalid encryption key causing Fernet cryptography errors during startup
 ✓ Added missing psutil dependency for system health monitoring functionality

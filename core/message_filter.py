@@ -296,3 +296,21 @@ class MessageFilter:
         except Exception as e:
             logger.error(f"Failed to update filter settings: {e}")
             return False
+    
+    async def update_global_settings(self, settings: Dict[str, Any]) -> bool:
+        """Update global filter settings."""
+        try:
+            for key, value in settings.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    logger.info(f"Updated global setting {key} to {value}")
+                else:
+                    logger.warning(f"Unknown setting: {key}")
+                    return False
+            
+            self.last_update = datetime.now()
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating global settings: {e}")
+            return False

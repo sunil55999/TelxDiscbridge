@@ -354,8 +354,8 @@ Back to main menu: /help"""
 • `/filterconfig videos on/off` - Block/allow video messages  
 • `/filterconfig documents on/off` - Block/allow document messages
 • `/filterconfig headers on/off` - Strip message headers/footers
-• `/filterconfig mentions on/off` - Strip @mentions from messages
-• `/filterconfig maxlength <number>` - Set maximum message length
+• `/filterconfig mentions on/off` - Strip mentions from messages
+• `/filterconfig maxlength NUMBER` - Set maximum message length
 
 **Word Filtering:**
 • `/blockword <word>` - Add word to global filter

@@ -21,26 +21,33 @@ class AdminCommands:
     
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /start command."""
+        if not update.effective_user or not update.message:
+            return
         user_id = update.effective_user.id
         
         welcome_message = (
-            "🤖 Welcome to Telegram → Discord → Telegram Forwarding Bot Admin Panel\n\n"
-            "Available commands:\n"
-            "/addpair - Add a new forwarding pair\n"
-            "/listpairs - List all forwarding pairs\n"
-            "/removepair - Remove a forwarding pair\n"
-            "/editpair - Edit a forwarding pair\n"
-            "/status - Show system status\n"
-            "/addsession - Add a new Telegram session\n"
-            "/filters - Manage keyword filters\n"
-            "/help - Show detailed help\n\n"
-            f"Your user ID: `{user_id}`"
+            "🤖 **Telegram ↔ Discord ↔ Telegram Forwarding Bot**\n\n"
+            "**Quick Start Commands:**\n"
+            "• `/addsession` - Add new Telegram user session\n"
+            "• `/addpair` - Create new forwarding pair\n"
+            "• `/listpairs` - Show all active pairs\n"
+            "• `/status` - System status & statistics\n"
+            "• `/help` - Complete command guide\n\n"
+            "**Management:**\n"
+            "• `/sessions` - Manage Telegram sessions\n"
+            "• `/blockword` - Add message filters\n"
+            "• `/blockimages` - Quick filter toggles\n\n"
+            f"Your admin ID: `{user_id}`\n"
+            "Use `/help` for comprehensive command documentation."
         )
         
-        await update.message.reply_text(welcome_message, parse_mode='Markdown')
+        if update.message:
+            await update.message.reply_text(welcome_message, parse_mode='Markdown')
     
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /help command."""
+        if not update.message:
+            return
         help_text = (
             "📖 **Detailed Command Help**\n\n"
             
@@ -61,9 +68,10 @@ class AdminCommands:
             "• `/cleanmem` - Force garbage collection\n\n"
             
             "**Filtering:**\n"
-            "• `/blockword [pair_id] [word]` - Block a word for a pair\n"
-            "• `/allowword [pair_id] [word]` - Remove word block\n"
-            "• `/listfilters [pair_id]` - Show filters for a pair\n\n"
+            "• `/blockword [word]` - Add word to global filter\n"
+            "• `/unblockword [word]` - Remove word from filter\n"
+            "• `/showfilters` - Show current filter settings\n"
+            "• `/blockimages` / `/allowimages` - Quick toggles\n\n"
             
             "Use commands without parameters for interactive mode.\n\n"
             
@@ -74,8 +82,10 @@ class AdminCommands:
     
     async def addpair_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /addpair command."""
+        if not update.message:
+            return
         try:
-            if len(context.args) >= 5:
+            if context.args and len(context.args) >= 5:
                 # Direct command with arguments
                 name, source_chat, discord_channel, dest_chat, session = context.args[:5]
                 
@@ -106,6 +116,8 @@ class AdminCommands:
     
     async def listpairs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /listpairs command."""
+        if not update.message:
+            return
         try:
             pairs = await self.database.get_all_pairs()
             
@@ -179,6 +191,8 @@ class AdminCommands:
     
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /status command."""
+        if not update.message:
+            return
         try:
             # Collect system status
             pairs = await self.database.get_all_pairs()
@@ -214,6 +228,8 @@ class AdminCommands:
     
     async def sessions_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /sessions command - Display all active sessions."""
+        if not update.message:
+            return
         try:
             # Get all sessions from database
             sessions = await self.database.get_all_sessions()
@@ -242,7 +258,17 @@ class AdminCommands:
                 sessions_message += f"⚡ Health: {session.health_status.title()}\n"
                 
                 if session.last_verified:
-                    sessions_message += f"🕒 Last verified: {session.last_verified.strftime('%Y-%m-%d %H:%M')}\n"
+                    if isinstance(session.last_verified, str):
+                        # Handle string datetime format
+                        try:
+                            from datetime import datetime
+                            dt = datetime.fromisoformat(session.last_verified.replace('Z', '+00:00'))
+                            sessions_message += f"🕒 Last verified: {dt.strftime('%Y-%m-%d %H:%M')}\n"
+                        except:
+                            sessions_message += f"🕒 Last verified: {session.last_verified}\n"
+                    else:
+                        # Handle datetime object
+                        sessions_message += f"🕒 Last verified: {session.last_verified.strftime('%Y-%m-%d %H:%M')}\n"
                 
                 sessions_message += f"🔧 Worker: {session.worker_id or 'None'}\n\n"
             
@@ -259,8 +285,10 @@ class AdminCommands:
     
     async def changesession_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /changesession command."""
+        if not update.message:
+            return
         try:
-            if len(context.args) < 2:
+            if not context.args or len(context.args) < 2:
                 await update.message.reply_text(
                     "❓ Usage: `/changesession [pair_id] [session_name]`",
                     parse_mode='Markdown'
@@ -304,8 +332,10 @@ class AdminCommands:
     
     async def blockword_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /blockword command."""
+        if not update.message:
+            return
         try:
-            if len(context.args) < 2:
+            if not context.args or len(context.args) < 2:
                 await update.message.reply_text(
                     "❓ Usage: `/blockword [pair_id] [word_or_phrase]`",
                     parse_mode='Markdown'

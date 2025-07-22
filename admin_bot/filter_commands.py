@@ -18,6 +18,8 @@ class FilterCommands:
     
     async def blockword_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Add word to global blocked list."""
+        if not update.message:
+            return
         try:
             if not context.args:
                 await update.message.reply_text(
@@ -45,6 +47,8 @@ class FilterCommands:
     
     async def unblockword_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Remove word from global blocked list."""
+        if not update.message:
+            return
         try:
             if not context.args:
                 await update.message.reply_text(
@@ -71,6 +75,8 @@ class FilterCommands:
     
     async def showfilters_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show current filter settings and statistics."""
+        if not update.message:
+            return
         try:
             stats = await self.message_filter.get_filter_stats()
             
@@ -106,6 +112,8 @@ class FilterCommands:
     
     async def filterconfig_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Configure filter settings."""
+        if not update.message:
+            return
         try:
             if not context.args:
                 await update.message.reply_text(
@@ -193,6 +201,8 @@ class FilterCommands:
     
     async def testfilter_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Test message filtering with sample text."""
+        if not update.message:
+            return
         try:
             if not context.args:
                 await update.message.reply_text(
@@ -245,6 +255,8 @@ class FilterCommands:
     # Quick filter commands for common operations
     async def block_images_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Quick command to block image messages."""
+        if not update.message:
+            return
         try:
             success = await self.message_filter.update_global_settings({'filter_images': True})
             if success:
@@ -257,6 +269,8 @@ class FilterCommands:
     
     async def allow_images_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Quick command to allow image messages."""
+        if not update.message:
+            return
         try:
             success = await self.message_filter.update_global_settings({'filter_images': False})
             if success:
@@ -269,6 +283,8 @@ class FilterCommands:
     
     async def strip_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Quick command to enable header/footer stripping."""
+        if not update.message:
+            return
         try:
             success = await self.message_filter.update_global_settings({'strip_headers': True})
             if success:
@@ -281,6 +297,8 @@ class FilterCommands:
     
     async def keep_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Quick command to disable header/footer stripping."""
+        if not update.message:
+            return
         try:
             success = await self.message_filter.update_global_settings({'strip_headers': False})
             if success:
