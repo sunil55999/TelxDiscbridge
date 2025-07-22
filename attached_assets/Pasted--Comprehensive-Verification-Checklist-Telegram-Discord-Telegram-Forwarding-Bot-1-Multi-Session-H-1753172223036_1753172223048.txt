@@ -1,0 +1,175 @@
+✅ Comprehensive Verification Checklist: Telegram→Discord→Telegram Forwarding Bot
+1. Multi-Session Handling
+ System supports multiple Telegram user sessions.
+
+ Every forwarding pair has an explicitly defined source Telegram session.
+
+ Changing session for one, many, or all selected pairs is possible via admin command or config.
+
+ Authentication and removal of sessions work as intended.
+
+ Sessions are securely stored and periodically validated for health and access rights.
+
+2. Admin Bot and Pair Management
+ All setup, configuration, and management operations are available via Telegram Bot commands with no external UI.
+
+ Only authorized admin Telegram user IDs can execute privileged commands.
+
+ No bot tokens or sensitive data are ever exposed in logs or admin messages.
+
+ Admin can add, edit, remove, and list pairs (with unique names/IDs per pair).
+
+ /addpair and /editpair commands require:
+
+Telegram source session
+
+Discord webhook URL
+
+Telegram destination channel ID
+
+Telegram bot token (per pair), stored securely
+
+Optional config (image block, keyword block, format controls, etc.)
+
+3. Bot Tokens and Destination Posting
+ On pair creation/edit:
+
+Telegram bot token validity is checked with Bot API (getMe).
+
+Bot’s ability to post in the target channel/group is verified.
+
+Token is required, stored encrypted, and never displayed in responses.
+
+ Each pair uses its assigned bot token for posting at the destination.
+
+ Removal of a pair securely wipes the associated bot token.
+
+4. Message Forwarding Flow (TG → Discord → TG)
+ Telegram source messages are reliably relayed to Discord via the correct webhook for each pair.
+
+ Discord → Telegram message flow uses the correct destination bot token for the Telegram posting chat.
+
+ All supported message types (see Section 8) are handled and filtered correctly.
+
+ Pair-level and global settings control image/media and keyword filtering.
+
+ Header/footer and mention stripping options function as expected.
+
+5. Advanced Message Handling, Reply, & Edit Sync
+ Reply Preservation:
+
+Telegram replies are mapped to Discord threads/replies and back to Telegram as correct replies.
+
+Discord replies are correctly linked when forwarding back to Telegram destination.
+
+ Message Editing/Deletion Sync:
+
+Edits to a message on Telegram source are synchronized:
+
+Edited on Discord (via webhook/bot edit).
+
+Edited on destination Telegram (using Bot API edit).
+
+Deletions at source are reflected across Discord and destination chat (deleted or marked as removed).
+
+All mappings are maintained with message IDs for robust sync.
+
+ Discord Bot/Webhook Reply & Edit:
+
+Discord messages use bot or webhook for posting, reply threading, and edits.
+
+Creation of webhooks by source/channel is working if required.
+
+Use of bot/webhook is traceable and edit/sync capable for round-trip handling.
+
+ Format Preservation:
+
+Message formatting (Markdown, HTML, code, links, bold, italics, blockquotes) is preserved as much as possible through all stages.
+
+Emoji and premium emoji render as expected (or fallback if not supported).
+
+Webpage previews and formatting are preserved when supported.
+
+ All Message Types Support:
+
+The system forwards (or gracefully degrades) text, images, files, GIFs, stickers, videos, polls, contacts, locations, web links, etc.
+
+If something is unsupported, the admin is notified (not silently dropped).
+
+Fallbacks for format mismatches (Discord ↔ Telegram).
+
+6. Filtering & Controls
+ Global and per-pair filtering (keywords, images/media) works reliably.
+
+ Filter lists are updatable at runtime via commands.
+
+ Customizable stripping of header/footer/mentions is respected as per config.
+
+7. Worker, Resource, and Health Management
+ Sharded worker processes (20–30 pairs per process) prevent memory leaks and ensure isolation.
+
+ No measurable memory/CPU leaks with ≥100 pairs; load remains stable under stress.
+
+ Garbage collection and scheduled health checks can be triggered by admin commands.
+
+ Workers restart on failure/command, with clean resource release.
+
+ System status and per-worker stats available via bot commands.
+
+8. Error Handling, Logging, and Security
+ All errors (posting failures, bad tokens, missing permissions, network errors) are logged and cause admin notification.
+
+ Logs exclude tokens or sensitive information.
+
+ Session files, tokens, and secrets are encrypted at rest.
+
+ API rate limits are respected; no abusive/flooding behavior.
+
+9. Documentation & Admin Help
+ README covers:
+
+Bot setup and OAuth (where required)
+
+Session login and management
+
+Pair creation and explanation of all parameters, including bot token
+
+All message types and limitations
+
+Admin controls and in-bot /help
+
+Error scenarios and log access
+
+ In-bot /help command summarizes all necessary admin usage.
+
+🟢 Functional Checklist (Quick Reference)
+ Multi-session (per pair)
+
+ All setup via Telegram bot
+
+ Per-pair encrypted bot tokens
+
+ Destination posting uses ONLY Bot API
+
+ All key message types/formatting
+
+ Replies, edits, and deletions sync Discord↔Telegram
+
+ Admin-only commands
+
+ Filtering: images, keywords, headers, mentions
+
+ No memory leaks or runaway processes
+
+ Obvious errors trigger alerts/logs
+
+ Well-documented and up-to-date admin help
+
+📝 How To Use
+Test each item manually or in automated integration tests.
+
+For failures, record details and iterate fixes until 100% of the list passes.
+
+Only sign-off release when all checklist items are green.
+
+If this checklist is satisfied, your project is considered fully compliant with all described requirements—for technical robustness, security, and operational usability.
