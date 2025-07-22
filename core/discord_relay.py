@@ -20,6 +20,7 @@ class DiscordRelay:
         self.database = database
         self.bot: Optional[discord.Client] = None
         self.running = False
+        self._bot_task: Optional[asyncio.Task] = None
         
         # Callback for when Discord messages are ready to forward to Telegram
         self.on_message_ready: Optional[Callable] = None
@@ -59,8 +60,15 @@ class DiscordRelay:
             async def on_message_delete(message):
                 await self._handle_discord_message_delete(message)
             
-            # Start the bot
-            await self.bot.start(self.bot_token)
+            # Start the bot in background
+            self.running = True
+            bot_task = asyncio.create_task(self.bot.start(self.bot_token))
+            
+            # Give it a moment to connect
+            await asyncio.sleep(2)
+            
+            # Store the task for cleanup later
+            self._bot_task = bot_task
             
         except Exception as e:
             logger.error(f"Failed to start Discord relay bot: {e}")
@@ -74,6 +82,15 @@ class DiscordRelay:
         logger.info("Stopping Discord relay bot...")
         self.running = False
         
+        if self._bot_task and not self._bot_task.done():
+            self._bot_task.cancel()
+            try:
+                await self._bot_task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logger.error(f"Error cancelling Discord bot task: {e}")
+        
         if self.bot:
             try:
                 await self.bot.close()
@@ -81,6 +98,7 @@ class DiscordRelay:
                 logger.error(f"Error stopping Discord bot: {e}")
         
         self.bot = None
+        self._bot_task = None
         logger.info("Discord relay bot stopped")
     
     async def send_message_to_discord(self, channel_id: int, message_data: Dict[str, Any], pair_id: int, original_message_id: int) -> Optional[int]:

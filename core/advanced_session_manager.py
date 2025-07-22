@@ -55,6 +55,11 @@ class AdvancedSessionManager:
         self.session_health_cache: Dict[str, SessionHealthCheck] = {}
         self.running = False
         
+        # Background tasks
+        self._health_task: Optional[asyncio.Task] = None
+        self._cleanup_task: Optional[asyncio.Task] = None
+        self._worker_task: Optional[asyncio.Task] = None
+        
         # Configuration
         self.max_pairs_per_session = 30
         self.health_check_interval = 300  # 5 minutes
@@ -73,13 +78,12 @@ class AdvancedSessionManager:
             # Initialize session data from database
             await self._initialize_sessions()
             
-            # Start background tasks
-            await asyncio.gather(
-                self._health_monitor_loop(),
-                self._cleanup_loop(),
-                self._worker_manager_loop(),
-                return_exceptions=True
-            )
+            # Start background tasks without awaiting them
+            self._health_task = asyncio.create_task(self._health_monitor_loop())
+            self._cleanup_task = asyncio.create_task(self._cleanup_loop())
+            self._worker_task = asyncio.create_task(self._worker_manager_loop())
+            
+            logger.info("Advanced session manager started successfully")
             
         except Exception as e:
             logger.error(f"Failed to start advanced session manager: {e}")
@@ -93,6 +97,18 @@ class AdvancedSessionManager:
         
         logger.info("Stopping advanced session manager...")
         self.running = False
+        
+        # Cancel background tasks
+        tasks_to_cancel = [self._health_task, self._cleanup_task, self._worker_task]
+        for task in tasks_to_cancel:
+            if task and not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    logger.error(f"Error cancelling task: {e}")
         
         # Stop all worker groups
         for worker_id, worker_group in self.worker_groups.items():

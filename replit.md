@@ -80,8 +80,11 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 ✓ Added missing psutil dependency for system health monitoring functionality
 ✓ Improved application startup sequence to handle component timeouts gracefully
 ✓ Modified admin bot initialization to use non-blocking polling for better error handling
+✓ Fixed AdvancedSessionManager blocking startup by converting background loops to async tasks
+✓ Fixed Discord relay blocking startup by using background task for bot connection
 ✓ Successfully resolved all startup failures - application now runs without errors
 ✓ All components (session manager, Telegram source/destination, Discord relay, admin bot) starting correctly
+✓ Admin bot now fully responsive and accepting commands via Telegram
 
 **July 22, 2025 - Per-Pair Bot Token Architecture Implemented**
 ✓ Comprehensive refactoring to use dedicated bot tokens per forwarding pair
