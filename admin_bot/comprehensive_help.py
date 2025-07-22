@@ -22,6 +22,7 @@ class ComprehensiveHelp:
 
 🔧 **PAIR MANAGEMENT**
 /addpair - Create new forwarding pair (interactive wizard)
+/createpair - Enhanced pair wizard (bot selection & auto-webhook)
 /listpairs - List all active forwarding pairs
 /removepair <id> - Remove forwarding pair
 /validatebot <id> - Validate bot token for pair
@@ -39,9 +40,19 @@ class ComprehensiveHelp:
 /filterconfig - Configure media/header/mention filtering
 
 **Quick Filter Commands:**
-• `/filterconfig images on/off` - Block image messages
-• `/filterconfig headers on/off` - Remove message headers/footers  
+• `/blockimages` / `/allowimages` - Block/allow image messages
+• `/stripheaders` / `/keepheaders` - Remove/keep message headers/footers  
 • `/filterconfig mentions on/off` - Strip @mentions
+
+🤖 **BOT TOKEN MANAGEMENT**
+/addbot <name> <token> - Add named bot token
+/listbots - Show available bot tokens
+/removebot <name> - Remove bot token
+
+**Enhanced Pair Creation:**
+• Discord Channel ID instead of webhook URL
+• Auto-webhook creation with source channel names
+• Bot selection from saved tokens
 
 📊 **MONITORING**
 /logs - Show recent error logs

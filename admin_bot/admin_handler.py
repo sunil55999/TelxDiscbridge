@@ -60,6 +60,16 @@ class AdminHandler:
             self.commands = AdminCommands(self.database, self.session_manager)
             self.enhanced_commands = EnhancedAdminCommands(self.database, self.session_manager, self.encryption_manager)
             self.filter_commands = FilterCommands(self.database, self.message_filter)
+            
+            # Import and initialize new components
+            from admin_bot.bot_management import BotManagementCommands
+            from admin_bot.enhanced_pair_wizard import EnhancedPairWizard
+            
+            self.bot_management = BotManagementCommands(self.database, self.encryption_manager)
+            from config.settings import Settings
+            settings = Settings()
+            self.pair_wizard = EnhancedPairWizard(self.database, self.session_manager, self.encryption_manager, settings.discord_bot_token)
+            
             if self.advanced_session_manager:
                 self.unified_commands = UnifiedSessionCommands(self.database, self.advanced_session_manager)
             
@@ -148,6 +158,12 @@ class AdminHandler:
             ("stripheaders", self.filter_commands.strip_headers_command),
             ("keepheaders", self.filter_commands.keep_headers_command),
             # Bot token management
+            ("addbot", self.bot_management.addbot_command),
+            ("listbots", self.bot_management.listbots_command),
+            ("removebot", self.bot_management.removebot_command),
+            # Enhanced pair creation
+            ("createpair", self.pair_wizard.start_pair_wizard),
+            # Bot token management
             ("validatebot", self.enhanced_commands.validate_bot_command),
             ("updatebottoken", self.enhanced_commands.update_bot_token_command),
             # System monitoring
@@ -176,7 +192,7 @@ class AdminHandler:
         wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
         self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
         
-        # Add message handler for enhanced pair creation and OTP codes
+        # Add message handler for enhanced pair creation, OTP codes, and wizard input
         combined_message_handler = self._wrap_admin_handler(self._handle_combined_messages)
         self.application.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler)
@@ -223,15 +239,23 @@ class AdminHandler:
         )
     
     async def _handle_combined_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle enhanced pair creation, OTP codes, or unknown messages."""
-        # Try enhanced pair creation first
-        if self.enhanced_commands:
+        """Handle pair wizard, enhanced pair creation, OTP codes, or unknown messages."""
+        user_id = update.effective_user.id
+        
+        # Try pair wizard input first
+        if hasattr(self, 'pair_wizard') and self.pair_wizard and hasattr(self.pair_wizard, 'wizard_state'):
+            if user_id in self.pair_wizard.wizard_state:
+                await self.pair_wizard.handle_wizard_input(update, context)
+                return
+        
+        # Try enhanced pair creation
+        if self.enhanced_commands and hasattr(self.enhanced_commands, 'handle_enhanced_pair_creation'):
             handled = await self.enhanced_commands.handle_enhanced_pair_creation(update, context)
             if handled:
                 return
         
         # Try OTP handling
-        if self.unified_commands:
+        if self.unified_commands and hasattr(self.unified_commands, 'handle_otp_message'):
             handled = await self.unified_commands.handle_otp_message(update, context)
             if handled:
                 return

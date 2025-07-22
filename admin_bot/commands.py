@@ -213,23 +213,49 @@ class AdminCommands:
             await update.message.reply_text(f"❌ Error getting status: {e}")
     
     async def sessions_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /sessions command."""
+        """Handle /sessions command - Display all active sessions."""
         try:
-            # This would list available sessions
-            sessions_message = (
-                "🔐 **Session Management**\n\n"
-                "Available commands:\n"
-                "• `/testsession [name]` - Test session connectivity\n"
-                "• `/changesession [pair_id] [session]` - Change pair session\n\n"
-                "💡 Sessions are managed through the configuration file.\n"
-                "Contact system administrator to add new sessions."
-            )
+            # Get all sessions from database
+            sessions = await self.database.get_all_sessions()
+            
+            if not sessions:
+                await update.message.reply_text(
+                    "📭 **No Active Sessions Found**\n\n"
+                    "Use `/addsession` to add a new Telegram user session."
+                )
+                return
+            
+            sessions_message = "🔐 **Active Telegram Sessions**\n\n"
+            
+            for session in sessions:
+                status_emoji = {
+                    'healthy': '🟢',
+                    'unhealthy': '🔴', 
+                    'expired': '⚠️',
+                    'unauthorized': '❌',
+                    'unknown': '🔵'
+                }.get(session.health_status, '❓')
+                
+                sessions_message += f"**{session.name}** {status_emoji}\n"
+                sessions_message += f"📱 Phone: {session.phone_number or 'Not set'}\n"
+                sessions_message += f"👥 Pairs: {session.pair_count}/{session.max_pairs}\n"
+                sessions_message += f"⚡ Health: {session.health_status.title()}\n"
+                
+                if session.last_verified:
+                    sessions_message += f"🕒 Last verified: {session.last_verified.strftime('%Y-%m-%d %H:%M')}\n"
+                
+                sessions_message += f"🔧 Worker: {session.worker_id or 'None'}\n\n"
+            
+            sessions_message += "**Management Commands:**\n"
+            sessions_message += "• `/addsession` - Add new session\n"
+            sessions_message += "• `/changesession <pair_id> <session>` - Change pair session\n"
+            sessions_message += "• `/health` - Check all session health"
             
             await update.message.reply_text(sessions_message, parse_mode='Markdown')
             
         except Exception as e:
             logger.error(f"Error in sessions command: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+            await update.message.reply_text(f"❌ Error getting sessions: {e}")
     
     async def changesession_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /changesession command."""

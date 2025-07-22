@@ -91,6 +91,17 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 ✓ Enhanced help system with detailed filtering and security command documentation
 ✓ Updated command visibility in help menu for better user experience
 
+**July 22, 2025 - Enhanced Admin Bot Features Implemented**
+✓ Added comprehensive bot token management system with naming (/addbot, /listbots, /removebot)
+✓ Enhanced session management to display all active sessions with health status
+✓ Created advanced pair creation wizard (/createpair) with guided setup
+✓ Implemented auto-webhook creation using Discord Channel ID instead of webhook URL
+✓ Added bot token selection interface for destination posting
+✓ Integrated Discord API for automatic webhook generation with source channel names
+✓ Fixed Markdown parsing errors in help system callbacks
+✓ Updated database schema to support bot token naming (telegram_bot_name field)
+✓ Created modular architecture for bot management and Discord integration
+
 **July 22, 2025 - Per-Pair Bot Token Architecture Implemented**
 ✓ Comprehensive refactoring to use dedicated bot tokens per forwarding pair
 ✓ Enhanced database schema with encrypted bot token storage per pair

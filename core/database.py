@@ -25,7 +25,8 @@ class ForwardingPair:
     discord_channel_id: int = 0
     telegram_dest_chat_id: int = 0
     telegram_bot_token_encrypted: str = ""  # Encrypted bot token for destination
-    discord_webhook_url: str = ""  # Discord webhook URL for posting
+    telegram_bot_name: str = ""  # Human-readable name for the bot token
+    discord_webhook_url: str = ""  # Discord webhook URL for posting (auto-generated)
     session_name: str = ""
     session_id: Optional[int] = None  # Reference to session ID
     is_active: bool = True
@@ -82,7 +83,8 @@ class ForwardingPairModel(Base):
     discord_channel_id = Column(String(50), nullable=False)
     telegram_dest_chat_id = Column(String(50), nullable=False)
     telegram_bot_token_encrypted = Column(Text, nullable=False)  # Encrypted bot token
-    discord_webhook_url = Column(Text, nullable=False)  # Discord webhook URL
+    telegram_bot_name = Column(String(100), nullable=False, default="")  # Human-readable bot name
+    discord_webhook_url = Column(Text, nullable=False)  # Discord webhook URL (auto-generated)
     session_name = Column(String(100), nullable=False)
     session_id = Column(Integer, nullable=True)  # Foreign key to sessions
     is_active = Column(Boolean, default=True)
