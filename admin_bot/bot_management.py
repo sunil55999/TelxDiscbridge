@@ -33,7 +33,7 @@ class BotTokenManager:
                 }
             
             # Store in cache with name
-            bot_info = validation_result['bot_info']
+            bot_info = validation_result.get('bot_info', validation_result)
             self.bot_cache[bot_name] = {
                 'token': bot_token,
                 'bot_info': bot_info,

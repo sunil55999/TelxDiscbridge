@@ -162,6 +162,8 @@ class AdminHandler:
             ("unblockimage", self.filter_commands.unblockimage_command),
             ("blockwordpair", self.filter_commands.blockwordpair_command),
             ("allowwordpair", self.filter_commands.allowwordpair_command),
+            # Image help command
+            ("imagehelp", self._show_image_help),
             # Bot token management
             ("addbot", self.bot_management.addbot_command),
             ("listbots", self.bot_management.listbots_command),
@@ -201,6 +203,12 @@ class AdminHandler:
         combined_message_handler = self._wrap_admin_handler(self._handle_combined_messages)
         self.application.add_handler(
             MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler)
+        )
+        
+        # Add image message handler for hash generation
+        image_message_handler = self._wrap_admin_handler(self._handle_image_message)
+        self.application.add_handler(
+            MessageHandler(filters.PHOTO, image_message_handler)
         )
         
         logger.info("Admin bot handlers setup complete")
@@ -412,3 +420,15 @@ class AdminHandler:
         notification_text = f"📢 **Notification**\n\n{notification}"
         await self.broadcast_message(notification_text)
         logger.info(f"Notification sent to admins: {notification}")
+    
+    async def _show_image_help(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Show image commands help."""
+        from admin_bot.image_handler import ImageHandler
+        image_handler = ImageHandler(self.message_filter)
+        await image_handler.show_image_commands_help(update, context)
+    
+    async def _handle_image_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle image uploads for hash generation."""
+        from admin_bot.image_handler import ImageHandler
+        image_handler = ImageHandler(self.message_filter)
+        await image_handler.handle_image_message(update, context)

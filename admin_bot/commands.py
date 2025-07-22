@@ -36,7 +36,10 @@ class AdminCommands:
             "**Management:**\n"
             "• `/sessions` - Manage Telegram sessions\n"
             "• `/blockword` - Add message filters\n"
-            "• `/blockimages` - Quick filter toggles\n\n"
+            "• `/blockimages` - Quick filter toggles\n"
+            "• `/stripheaders` - Remove message headers\n"
+            "• `/blockimage` - Block specific images by hash\n"
+            "• `/blockwordpair` - Block words for specific pairs\n\n"
             f"Your admin ID: `{user_id}`\n"
             "Use `/help` for comprehensive command documentation."
         )

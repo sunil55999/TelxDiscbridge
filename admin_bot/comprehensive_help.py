@@ -349,18 +349,25 @@ Back to main menu: /help"""
         elif data == "help:security":
             message = """🛡️ **Security & Filtering Commands**
 
-**Filtering Commands:**
-• `/filterconfig images on/off` - Block/allow image messages
-• `/filterconfig videos on/off` - Block/allow video messages  
-• `/filterconfig documents on/off` - Block/allow document messages
-• `/filterconfig headers on/off` - Strip message headers/footers
-• `/filterconfig mentions on/off` - Strip mentions from messages
-• `/filterconfig maxlength NUMBER` - Set maximum message length
-
-**Word Filtering:**
+**Basic Filtering:**
 • `/blockword <word>` - Add word to global filter
 • `/unblockword <word>` - Remove word from filter
 • `/showfilters` - Show current filter settings
+• `/filterconfig <setting> <value>` - Configure filters
+
+**Quick Toggles:**
+• `/blockimages` / `/allowimages` - Block/allow all images
+• `/stripheaders` / `/keepheaders` - Strip/keep headers
+
+**Advanced Image Filtering:**
+• Send image to bot → Get perceptual hash
+• `/blockimage <hash>` - Block image globally
+• `/blockimage <hash> <pair_id>` - Block for specific pair
+• `/imagehelp` - Complete image filtering guide
+
+**Per-Pair Filtering:**
+• `/blockwordpair <pair_id> <word>` - Block word for pair
+• `/allowwordpair <pair_id> <word>` - Allow word for pair
 
 **Security Features:**
 🔒 All bot tokens encrypted

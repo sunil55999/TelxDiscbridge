@@ -90,6 +90,11 @@ class ForwardingBot:
             self.settings.encryption_key
         )
         
+        # Initialize image hash manager
+        from utils.image_hash import image_hash_manager
+        image_hash_manager.database = self.database
+        await image_hash_manager.initialize()
+        
         logger.info("All components initialized successfully")
     
     async def start(self):

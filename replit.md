@@ -75,19 +75,23 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
-**July 22, 2025 - Advanced Filtering and Enhanced Commands Implemented**
+**July 22, 2025 - Complete Advanced Filtering System with Image Upload Support**
 ✓ Fixed all markdown parsing errors in sessions command and help system callbacks
 ✓ Removed duplicate command registrations - cleaned up admin handler duplicates
 ✓ Implemented perceptual hash (pHash) image blocking using imagehash library for precise image detection
 ✓ Added per-pair and global filtering options for both images and keywords
 ✓ Made header removal (/stripheaders, /keepheaders) and mention removal commands visible in help
 ✓ Created comprehensive image hash management system with similarity detection
-✓ Added new commands: /blockimage, /unblockimage, /blockwordpair, /allowwordpair
+✓ Added new commands: /blockimage, /unblockimage, /blockwordpair, /allowwordpair, /imagehelp
 ✓ Enhanced filter commands with per-pair functionality and advanced settings
-✓ Fixed all console errors and critical LSP diagnostic issues
-✓ Bot now supports sophisticated filtering with both global and pair-specific controls
-✓ Successfully integrated imagehash, pillow, and scipy dependencies for image processing
-✓ All admin commands working properly without parsing or runtime errors
+✓ Fixed bot session addition errors in BotTokenManager validation system
+✓ Resolved help button callback parsing issues with updated comprehensive help content
+✓ Implemented ImageHandler class with complete image upload and pHash generation support
+✓ Added image message handler to admin bot for automatic hash generation when users upload images
+✓ Enhanced comprehensive help system with all advanced filtering commands properly documented
+✓ Fixed main.py syntax errors and properly initialized image hash manager with database connection
+✓ Bot now fully supports perceptual hash image blocking globally and per-pair with file upload functionality
+✓ All admin commands working properly without parsing or runtime errors - complete feature set implemented
 
 **July 22, 2025 - Application Startup Issues Fixed**
 ✓ Fixed invalid encryption key causing Fernet cryptography errors during startup
