@@ -102,15 +102,18 @@ class ForwardingBot:
         self.running = True
         
         try:
-            # Start all components concurrently
-            await asyncio.gather(
-                self.advanced_session_manager.start(),
-                self.telegram_source.start(),
-                self.telegram_destination.start(),
-                self.discord_relay.start(),
-                self.admin_handler.start(),
-                self._monitor_health()
-            )
+            # Start non-blocking components first
+            await self.advanced_session_manager.start()
+            await self.telegram_source.start()
+            await self.telegram_destination.start()
+            await self.discord_relay.start()
+            
+            # Start admin handler and health monitor as background tasks
+            admin_task = asyncio.create_task(self.admin_handler.start())
+            health_task = asyncio.create_task(self._monitor_health())
+            
+            # Wait for tasks to complete or fail
+            await asyncio.gather(admin_task, health_task)
         except Exception as e:
             logger.error(f"Error during bot startup: {e}")
             await self.stop()

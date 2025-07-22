@@ -69,17 +69,28 @@ class AdminHandler:
             # Add command handlers
             self._setup_handlers()
             
-            # Start the bot
-            await self.application.initialize()
-            await self.application.start()
-            await self.application.updater.start_polling()
+            # Start the bot with timeout
+            await asyncio.wait_for(self.application.initialize(), timeout=30.0)
+            await asyncio.wait_for(self.application.start(), timeout=30.0)
+            
+            # Start polling in background - don't await it directly
+            polling_task = asyncio.create_task(self.application.updater.start_polling())
             
             self.running = True
             logger.info("Admin bot started successfully")
             
-            # Keep running
-            while self.running:
-                await asyncio.sleep(1)
+            # Keep running and monitor polling task
+            try:
+                while self.running:
+                    await asyncio.sleep(1)
+                    # Check if polling task failed
+                    if polling_task.done() and polling_task.exception():
+                        logger.error(f"Polling task failed: {polling_task.exception()}")
+                        break
+            except asyncio.CancelledError:
+                logger.info("Admin bot task was cancelled")
+                polling_task.cancel()
+                raise
                 
         except Exception as e:
             logger.error(f"Failed to start admin bot: {e}")

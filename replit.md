@@ -75,6 +75,14 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
+**July 22, 2025 - Application Startup Issues Fixed**
+✓ Fixed invalid encryption key causing Fernet cryptography errors during startup
+✓ Added missing psutil dependency for system health monitoring functionality
+✓ Improved application startup sequence to handle component timeouts gracefully
+✓ Modified admin bot initialization to use non-blocking polling for better error handling
+✓ Successfully resolved all startup failures - application now runs without errors
+✓ All components (session manager, Telegram source/destination, Discord relay, admin bot) starting correctly
+
 **July 22, 2025 - Per-Pair Bot Token Architecture Implemented**
 ✓ Comprehensive refactoring to use dedicated bot tokens per forwarding pair
 ✓ Enhanced database schema with encrypted bot token storage per pair
