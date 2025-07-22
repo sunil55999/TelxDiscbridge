@@ -365,29 +365,44 @@ class UnifiedSessionCommands:
                 except:
                     pass
     
-    async def handle_otp_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_otp_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
         """Handle OTP code sent as message."""
         try:
             user_id = update.effective_user.id if update.effective_user else 0
             message_text = update.message.text.strip() if update.message and update.message.text else ""
+            
+            # Debug logging
+            logger.info(f"OTP message handler called: user_id={user_id}, text={message_text}")
+            logger.info(f"Pending verifications: {list(self.pending_verifications.keys())}")
             
             # Find pending verification for this user that's waiting for OTP
             verification_info = None
             verification_id = None
             
             for vid, vinfo in self.pending_verifications.items():
+                logger.info(f"Checking verification {vid}: user={vinfo.get('user_id')}, waiting={vinfo.get('waiting_for_otp')}")
                 if (vinfo.get('user_id') == user_id and 
                     vinfo.get('waiting_for_otp')):
                     verification_info = vinfo
                     verification_id = vid
+                    logger.info(f"Found matching verification: {vid}")
                     break
             
             if not verification_info:
-                # Not an OTP message
-                return False
+                # Check if there's any verification for this user (fallback)
+                for vid, vinfo in self.pending_verifications.items():
+                    if vinfo.get('user_id') == user_id:
+                        verification_info = vinfo
+                        verification_id = vid
+                        logger.info(f"Found verification for user (not marked as waiting): {vid}")
+                        break
+                
+                if not verification_info:
+                    logger.info(f"No verification found for user {user_id}")
+                    return False
             
-            # Validate OTP format (typically 5-6 digits)
-            if not message_text.isdigit() or len(message_text) < 4 or len(message_text) > 6:
+            # Validate OTP format (typically 4-8 digits)
+            if not message_text.isdigit() or len(message_text) < 4 or len(message_text) > 8:
                 if update.message:
                     await update.message.reply_text(
                         "❌ **Invalid code format**\n\n"

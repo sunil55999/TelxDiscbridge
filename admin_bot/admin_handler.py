@@ -238,9 +238,9 @@ class AdminHandler:
             if handled:
                 return
         
-        # Try OTP handling
-        if self.unified_commands and hasattr(self.unified_commands, 'handle_otp_message'):
-            handled = await self.unified_commands.handle_otp_message(update, context)
+        # Try OTP handling first (session commands)
+        if self.session_commands and hasattr(self.session_commands, 'handle_otp_message'):
+            handled = await self.session_commands.handle_otp_message(update, context)
             if handled:
                 return
         

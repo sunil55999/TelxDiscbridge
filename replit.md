@@ -75,6 +75,16 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
+**July 22, 2025 - OTP Handling Fix & Session Management Improvements**
+✓ Fixed OTP input handling after "Enter OTP" button press
+✓ Enhanced OTP message routing to correct session commands handler
+✓ Added comprehensive debug logging for OTP verification workflow
+✓ Fixed SessionInfo attribute errors (session_name → name)
+✓ Removed invalid user_id references from session display
+✓ Improved OTP message validation (4-8 digits instead of strict 4-6)
+✓ Enhanced fallback verification handling for pending sessions
+✓ All sessions cleared and ready for fresh authentication workflow
+
 **July 22, 2025 - Enhanced /addpair with Automatic Discord Webhook Creation**
 ✓ Updated /addpair workflow to use Discord channel ID instead of webhook URL
 ✓ Implemented automatic Discord webhook creation based on Telegram source channel name
