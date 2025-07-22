@@ -30,7 +30,7 @@ class TelegramMessageHandler:
                 logger.warning(f"Unknown event type: {event_type}")
                 
         except Exception as e:
-            logger.error(f"Error handling Telegram message: {e}")
+            logger.error(f"Error handling Telegram message: {e}", exc_info=True)
     
     async def _handle_new_message(self, message_data: Dict[str, Any]):
         """Handle new message forwarding."""
@@ -39,10 +39,11 @@ class TelegramMessageHandler:
         formatted_message = message_data.get('formatted_message')
         
         if not all([pair, original_message, formatted_message]):
-            logger.error("Missing required message data")
+            logger.error("Missing required message data for new message event")
             return
         
         try:
+            logger.info(f"Forwarding new message for pair {pair.id}")
             # Forward to Discord first
             discord_message_id = await self.discord_relay.send_message_to_discord(
                 channel_id=pair.discord_channel_id,
@@ -65,12 +66,12 @@ class TelegramMessageHandler:
             )
             
             if telegram_message_id:
-                logger.debug(f"Successfully forwarded message through pair {pair.id}")
+                logger.success(f"Successfully forwarded message through pair {pair.id}")
             else:
                 logger.error(f"Failed to send message to Telegram destination for pair {pair.id}")
                 
         except Exception as e:
-            logger.error(f"Error forwarding new message for pair {pair.id}: {e}")
+            logger.error(f"Error forwarding new message for pair {pair.id}: {e}", exc_info=True)
     
     async def _handle_message_edit(self, message_data: Dict[str, Any]):
         """Handle message edit forwarding."""
@@ -80,10 +81,11 @@ class TelegramMessageHandler:
         mapping = message_data.get('mapping')
         
         if not all([pair, original_message, formatted_message, mapping]):
-            logger.error("Missing required edit message data")
+            logger.error("Missing required message data for message edit event")
             return
         
         try:
+            logger.info(f"Forwarding message edit for pair {pair.id}")
             # Edit Discord message
             discord_success = await self.discord_relay.edit_discord_message(
                 channel_id=pair.discord_channel_id,
@@ -97,28 +99,29 @@ class TelegramMessageHandler:
                 telegram_success = await self.telegram_destination.edit_message(
                     chat_id=pair.telegram_dest_chat_id,
                     message_id=mapping.telegram_dest_id,
-                    message_data=formatted_message
+                    message_data=formatted_message,
+                    pair_id=pair.id,
                 )
             
             if discord_success or telegram_success:
-                logger.debug(f"Successfully edited message for pair {pair.id}")
+                logger.success(f"Successfully edited message for pair {pair.id}")
             else:
                 logger.warning(f"Failed to edit message for pair {pair.id}")
                 
         except Exception as e:
-            logger.error(f"Error handling message edit for pair {pair.id}: {e}")
+            logger.error(f"Error handling message edit for pair {pair.id}: {e}", exc_info=True)
     
     async def _handle_message_delete(self, message_data: Dict[str, Any]):
         """Handle message deletion forwarding."""
         pair = message_data.get('pair')
         mapping = message_data.get('mapping')
-        deleted_id = message_data.get('deleted_id')
         
         if not all([pair, mapping]):
-            logger.error("Missing required delete message data")
+            logger.error("Missing required message data for message delete event")
             return
         
         try:
+            logger.info(f"Forwarding message deletion for pair {pair.id}")
             # Delete Discord message
             discord_success = await self.discord_relay.delete_discord_message(
                 channel_id=pair.discord_channel_id,
@@ -128,13 +131,14 @@ class TelegramMessageHandler:
             # Delete Telegram destination message
             telegram_success = await self.telegram_destination.delete_message(
                 chat_id=pair.telegram_dest_chat_id,
-                message_id=mapping.telegram_dest_id
+                message_id=mapping.telegram_dest_id,
+                pair_id=pair.id,
             )
             
             if discord_success or telegram_success:
-                logger.debug(f"Successfully deleted message for pair {pair.id}")
+                logger.success(f"Successfully deleted message for pair {pair.id}")
             else:
                 logger.warning(f"Failed to delete message for pair {pair.id}")
                 
         except Exception as e:
-            logger.error(f"Error handling message deletion for pair {pair.id}: {e}")
+            logger.error(f"Error handling message deletion for pair {pair.id}: {e}", exc_info=True)

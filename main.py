@@ -4,13 +4,12 @@ Main entry point for the Telegram → Discord → Telegram forwarding bot.
 """
 
 import asyncio
-import os
 import signal
 import sys
-from typing import Dict, List, Optional
+from typing import Optional
+from concurrent.futures import ProcessPoolExecutor
 
 from loguru import logger
-# Environment variables will be loaded by the Settings class
 
 from config.settings import Settings
 from core.database import Database
@@ -37,6 +36,7 @@ class ForwardingBot:
         self.message_orchestrator: Optional[MessageOrchestrator] = None
         self.admin_handler: Optional[AdminHandler] = None
         self.running = False
+        self.executor: Optional[ProcessPoolExecutor] = None
         
     async def initialize(self):
         """Initialize all components."""
@@ -117,6 +117,9 @@ class ForwardingBot:
         logger.info("Starting forwarding bot...")
         self.running = True
         
+        # Create a process pool for worker processes
+        self.executor = ProcessPoolExecutor()
+
         try:
             # Start core components first
             await self.advanced_session_manager.start()
@@ -131,6 +134,13 @@ class ForwardingBot:
             admin_task = asyncio.create_task(self.admin_handler.start())
             health_task = asyncio.create_task(self._monitor_health())
             
+            # Start worker processes for each pair
+            pairs = await self.database.get_all_pairs()
+            for pair in pairs:
+                if pair.is_active:
+                    loop = asyncio.get_running_loop()
+                    loop.run_in_executor(self.executor, self.run_pair_worker, pair.id)
+
             # Wait for tasks to complete or fail
             await asyncio.gather(admin_task, health_task)
         except Exception as e:
@@ -138,6 +148,15 @@ class ForwardingBot:
             await self.stop()
             raise
     
+    def run_pair_worker(self, pair_id: int):
+        """Run a single forwarding pair in a worker process."""
+        logger.info(f"Starting worker process for pair {pair_id}")
+        try:
+            # Each worker process will have its own event loop
+            asyncio.run(self.message_orchestrator.process_pair(pair_id))
+        except Exception as e:
+            logger.error(f"Error in worker process for pair {pair_id}: {e}", exc_info=True)
+
     async def stop(self):
         """Stop all bot components."""
         if not self.running:
@@ -147,6 +166,9 @@ class ForwardingBot:
         self.running = False
         
         # Stop all components
+        if self.executor:
+            self.executor.shutdown(wait=False)
+
         stop_tasks = []
         if self.admin_handler:
             stop_tasks.append(self.admin_handler.stop())

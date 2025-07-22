@@ -193,7 +193,7 @@ class MessageFilter:
             if pattern.search(text):
                 return FilterResult(
                     should_forward=False,
-                    reason=f"Matches spam pattern"
+                    reason="Matches spam pattern"
                 )
         
         # Check for suspicious URLs

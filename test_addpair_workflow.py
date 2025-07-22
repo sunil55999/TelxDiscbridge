@@ -55,7 +55,7 @@ async def test_bot_token_workflow():
         print("\n=== Testing Wizard Data Structure ===")
         
         # This simulates what the wizard collects
-        mock_user_data = {
+        ({
             'name': 'TestPair',
             'source_chat': -1001234567890,
             'discord_channel_id': 1234567890123456789,
@@ -80,7 +80,7 @@ async def test_bot_token_workflow():
             
             # This would fail (the old broken way)
             try:
-                broken_access = mock_selected_bot['token']  # This key doesn't exist
+                mock_selected_bot['token']  # This key doesn't exist
                 print("❌ UNEXPECTED: Direct token access worked (should fail)")
                 return False
             except KeyError:

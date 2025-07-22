@@ -26,27 +26,34 @@ class DiscordMessageHandler:
                 logger.debug(f"Unknown Discord event type: {event_type}")
                 
         except Exception as e:
-            logger.error(f"Error handling Discord message: {e}")
+            logger.error(f"Error handling Discord message: {e}", exc_info=True)
     
     async def _handle_new_discord_message(self, message_data: Dict[str, Any]):
         """Handle new Discord messages (monitoring only)."""
-        # This could be used for monitoring Discord activity
-        # or implementing reverse forwarding if needed in the future
-        channel_id = message_data.get('channel_id')
-        content = message_data.get('content', '')[:100]  # First 100 chars for logging
-        
-        logger.debug(f"Discord message in channel {channel_id}: {content}...")
-    
+        try:
+            channel_id = message_data.get('channel_id')
+            content = message_data.get('content', '')[:100]  # First 100 chars for logging
+
+            logger.debug(f"Discord message in channel {channel_id}: {content}...")
+        except Exception as e:
+            logger.error(f"Error handling new Discord message: {e}", exc_info=True)
+
     async def _handle_discord_message_edit(self, message_data: Dict[str, Any]):
         """Handle Discord message edits (monitoring only)."""
-        channel_id = message_data.get('channel_id')
-        message_id = message_data.get('message_id')
-        
-        logger.debug(f"Discord message edited in channel {channel_id}, message ID: {message_id}")
+        try:
+            channel_id = message_data.get('channel_id')
+            message_id = message_data.get('message_id')
+
+            logger.debug(f"Discord message edited in channel {channel_id}, message ID: {message_id}")
+        except Exception as e:
+            logger.error(f"Error handling Discord message edit: {e}", exc_info=True)
     
     async def _handle_discord_message_delete(self, message_data: Dict[str, Any]):
         """Handle Discord message deletions (monitoring only)."""
-        channel_id = message_data.get('channel_id')
-        message_id = message_data.get('message_id')
-        
-        logger.debug(f"Discord message deleted in channel {channel_id}, message ID: {message_id}")
+        try:
+            channel_id = message_data.get('channel_id')
+            message_id = message_data.get('message_id')
+
+            logger.debug(f"Discord message deleted in channel {channel_id}, message ID: {message_id}")
+        except Exception as e:
+            logger.error(f"Error handling Discord message deletion: {e}", exc_info=True)
