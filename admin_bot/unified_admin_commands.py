@@ -827,8 +827,17 @@ class UnifiedAdminCommands:
         user_data = context.user_data
         
         try:
-            # Validate bot token and permissions
-            bot_token = selected_bot['token']
+            # Get bot token by name (the selected_bot dict doesn't contain token for security)
+            bot_token = await self.bot_manager.get_bot_token_by_name(selected_bot['name'])
+            if not bot_token:
+                await update.message.reply_text(
+                    f"❌ **Bot Token Error**\n\n"
+                    f"Could not retrieve token for bot '{selected_bot['name']}'.\n"
+                    "Please try adding the bot again with `/addbot`."
+                )
+                user_data.clear()
+                return
+                
             dest_chat = user_data['dest_chat']
             
             from core.bot_token_manager import BotTokenValidator

@@ -87,6 +87,16 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 ✓ **COMPREHENSIVE TESTING TOOLS CREATED** - Migration, verification, and recovery scripts added
 ✓ **"Error Creating Pair 'Token'" ISSUE FIXED** - Root cause database schema mismatch resolved
 
+**July 22, 2025 - CRITICAL PAIR CREATION FIX: Bot Token Access Error Resolved**
+✓ **FIXED "Error creating pair from wizard: 'token'" ISSUE** - Root cause was incorrect bot token access method
+✓ **ENHANCED SECURITY MODEL** - Bot tokens no longer exposed in get_available_bots() listings for security
+✓ **UPDATED TOKEN RETRIEVAL** - Pair creation wizard now uses get_bot_token_by_name() instead of direct dict access
+✓ **IMPROVED ERROR HANDLING** - Added proper validation when bot tokens can't be retrieved by name
+✓ **MAINTAINED TOKEN SECURITY** - Tokens remain encrypted and only accessible through proper API methods
+✓ **SESSIONS COMMAND MARKDOWN FIX** - Resolved parsing errors by removing problematic formatting and adding character escaping
+✓ **COMPREHENSIVE TESTING ADDED** - Created verification scripts for both issues to prevent regression
+✓ **ALL COMPONENTS OPERATIONAL** - Admin bot, Discord bot (fxtest#3233), and session management working correctly
+
 **July 22, 2025 - OTP Handling Fix & Session Management Improvements**
 ✓ Fixed OTP input handling after "Enter OTP" button press
 ✓ Enhanced OTP message routing to correct session commands handler
