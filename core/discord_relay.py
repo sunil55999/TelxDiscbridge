@@ -1,12 +1,10 @@
 """Discord relay bot for message forwarding."""
 
 import asyncio
-import aiohttp
 from typing import Dict, List, Optional, Any, Callable
 from io import BytesIO
 
 import discord
-from discord.ext import commands
 from loguru import logger
 
 from core.database import Database
@@ -62,18 +60,18 @@ class DiscordRelay:
             
             # Start the bot in background
             self.running = True
-            bot_task = asyncio.create_task(self.bot.start(self.bot_token))
+            self._bot_task = asyncio.create_task(self.bot.start(self.bot_token))
             
             # Give it a moment to connect
             await asyncio.sleep(2)
             
-            # Store the task for cleanup later
-            self._bot_task = bot_task
-            
         except Exception as e:
             logger.error(f"Failed to start Discord relay bot: {e}")
             raise
-    
+        finally:
+            if self.bot and not self.bot.is_closed():
+                await self.bot.close()
+
     async def stop(self):
         """Stop the Discord relay bot."""
         if not self.running:

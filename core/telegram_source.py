@@ -1,12 +1,10 @@
 """Telegram source client using Telethon for user sessions."""
 
-import asyncio
 from typing import Dict, List, Optional, Callable
-from pathlib import Path
 
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
-from telethon.tl.types import Message, MessageMediaPhoto, MessageMediaDocument
+from telethon.tl.types import Message
 from loguru import logger
 
 from core.database import Database, ForwardingPair
@@ -99,6 +97,7 @@ class TelegramSource:
             logger.debug(f"Client already exists for session: {session_name}")
             return
         
+        client = None
         try:
             # Get session data
             session_info = await self.session_manager.get_session(session_name)
@@ -109,8 +108,8 @@ class TelegramSource:
             # Create client with session data
             client = TelegramClient(
                 StringSession(session_info.get('session_data', '')),
-                session_info['api_id'],
-                session_info['api_hash']
+                api_id=session_info.get('api_id'),
+                api_hash=session_info.get('api_hash')
             )
             
             # Connect client
@@ -118,7 +117,6 @@ class TelegramSource:
             
             if not await client.is_user_authorized():
                 logger.error(f"Session not authorized: {session_name}")
-                await client.disconnect()
                 return
             
             # Register message handler
@@ -150,13 +148,15 @@ class TelegramSource:
         except Exception as e:
             logger.error(f"Failed to start client for session {session_name}: {e}")
             if session_name in self.clients:
-                try:
-                    await self.clients[session_name].disconnect()
-                except:
-                    pass
                 del self.clients[session_name]
             raise
-    
+        finally:
+            if client and not client.is_connected():
+                try:
+                    await client.disconnect()
+                except Exception as e:
+                    logger.error(f"Error disconnecting client {session_name} in finally block: {e}")
+
     async def _handle_message(self, event):
         """Handle new messages from Telegram."""
         try:

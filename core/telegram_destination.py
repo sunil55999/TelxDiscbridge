@@ -1,10 +1,9 @@
 """Telegram destination handler using per-pair bot tokens."""
 
-import asyncio
 from typing import Dict, List, Optional, Any
 from io import BytesIO
 
-from telegram import Bot, Message as TgMessage, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import Bot, Message as TgMessage
 from telegram.error import TelegramError, BadRequest, Forbidden
 from telegram.constants import ParseMode, MessageLimit
 from loguru import logger

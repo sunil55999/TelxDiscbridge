@@ -2,7 +2,6 @@
 
 import asyncio
 import traceback
-import sys
 from typing import Any, Callable, Optional, Dict, List
 from datetime import datetime
 from functools import wraps

@@ -30,7 +30,7 @@ async def diagnose_bot_permissions(bot_token: str, chat_id: int):
         print("Step 1: Validating bot token...")
         try:
             me = await bot.get_me()
-            print(f"✅ Bot token valid")
+            print("✅ Bot token valid")
             print(f"   Bot ID: {me.id}")
             print(f"   Username: @{me.username}")
             print(f"   Name: {me.first_name}")
@@ -46,7 +46,7 @@ async def diagnose_bot_permissions(bot_token: str, chat_id: int):
         print("Step 2: Checking chat access...")
         try:
             chat = await bot.get_chat(chat_id)
-            print(f"✅ Bot can access chat")
+            print("✅ Bot can access chat")
             print(f"   Chat title: {getattr(chat, 'title', 'N/A')}")
             print(f"   Chat type: {chat.type}")
             print(f"   Chat username: {getattr(chat, 'username', 'None')}")
@@ -67,7 +67,7 @@ async def diagnose_bot_permissions(bot_token: str, chat_id: int):
         print("Step 3: Checking bot membership and permissions...")
         try:
             chat_member = await bot.get_chat_member(chat_id, me.id)
-            print(f"✅ Bot is a member of the chat")
+            print("✅ Bot is a member of the chat")
             print(f"   Status: {chat_member.status}")
             
             # Check specific permissions
@@ -110,7 +110,7 @@ async def diagnose_bot_permissions(bot_token: str, chat_id: int):
                 print("   Solution: Grant these permissions to the bot in chat settings")
                 return False
             else:
-                print(f"\n✅ Bot has all required permissions")
+                print("\n✅ Bot has all required permissions")
                 
         except Forbidden as e:
             print(f"❌ Cannot get bot membership info: {e}")
@@ -129,12 +129,12 @@ async def diagnose_bot_permissions(bot_token: str, chat_id: int):
                 chat_id=chat_id,
                 text="🤖 Bot permission test - this message will be deleted automatically"
             )
-            print(f"✅ Bot can send messages")
+            print("✅ Bot can send messages")
             
             # Try to delete the test message
             try:
                 await bot.delete_message(chat_id=chat_id, message_id=test_message.message_id)
-                print(f"✅ Bot can delete messages")
+                print("✅ Bot can delete messages")
             except Exception as e:
                 print(f"⚠️  Bot cannot delete messages: {e}")
                 

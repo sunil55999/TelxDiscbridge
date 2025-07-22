@@ -1,6 +1,5 @@
 """Configuration settings for the forwarding bot."""
 
-import os
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass, field
 import yaml

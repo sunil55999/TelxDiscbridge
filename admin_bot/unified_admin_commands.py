@@ -471,13 +471,12 @@ class UnifiedAdminCommands:
             user_data['creating_pair'] = True
             user_data['step'] = 'name'
             
-            welcome_message = (
+            await update.message.reply_text(
                 "🚀 **Create New Forwarding Pair**\n\n"
                 "I'll guide you through creating a forwarding pair step by step.\n\n"
-                "**Step 1/6:** Enter a unique name for this forwarding pair:"
+                "**Step 1/6:** Enter a unique name for this forwarding pair:",
+                parse_mode='Markdown'
             )
-            
-            await update.message.reply_text(welcome_message, parse_mode='Markdown')
             
         except Exception as e:
             logger.error(f"Error in addpair command: {e}")

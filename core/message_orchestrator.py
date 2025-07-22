@@ -327,3 +327,27 @@ class MessageOrchestrator:
         except Exception as e:
             logger.error(f"Error updating pair settings for {pair_id}: {e}")
             return False
+
+    async def process_pair(self, pair_id: int):
+        """Process messages for a single forwarding pair."""
+        pair = await self.database.get_pair(pair_id)
+        if not pair:
+            logger.error(f"Pair {pair_id} not found, worker process exiting.")
+            return
+
+        logger.info(f"Worker process started for pair {pair.id} ({pair.name})")
+
+        # This is a simplified loop. In a real implementation, this would
+        # be a more robust event-driven system.
+        while self.running:
+            try:
+                # In a real implementation, this would be a blocking call
+                # to a queue or a similar mechanism.
+                await asyncio.sleep(1)
+            except asyncio.CancelledError:
+                logger.info(f"Worker for pair {pair.id} stopping.")
+                break
+            except Exception as e:
+                logger.error(f"Error in worker for pair {pair.id}: {e}", exc_info=True)
+                # Implement a backoff strategy to avoid spamming logs
+                await asyncio.sleep(5)

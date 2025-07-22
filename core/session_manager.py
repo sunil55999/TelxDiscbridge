@@ -1,8 +1,6 @@
 """Session manager for Telethon user sessions."""
 
 import os
-import json
-import asyncio
 from typing import Dict, List, Optional, Any
 from loguru import logger
 from cryptography.fernet import Fernet
@@ -14,26 +12,15 @@ from core.database import Database, SessionModel
 class SessionManager:
     """Manages Telegram user sessions with encryption."""
     
-    def __init__(self, database: Database, encryption_key: Optional[str] = None):
+    def __init__(self, database: Database, encryption_key: str):
         self.database = database
         # Store active clients for OTP verification
         self.pending_clients = {}
         
         # Initialize encryption
-        if encryption_key:
-            self.cipher = Fernet(encryption_key.encode())
-        else:
-            # Generate or load encryption key
-            key_file = "session_key.key"
-            if os.path.exists(key_file):
-                with open(key_file, 'rb') as f:
-                    self.cipher = Fernet(f.read())
-            else:
-                key = Fernet.generate_key()
-                with open(key_file, 'wb') as f:
-                    f.write(key)
-                self.cipher = Fernet(key)
-                logger.info("Generated new session encryption key")
+        if not encryption_key:
+            raise ValueError("ENCRYPTION_KEY is not set. Please set it in your environment variables.")
+        self.cipher = Fernet(encryption_key.encode())
     
     async def save_session(self, name: str, phone_number: str, session_data: str) -> bool:
         """Save encrypted session data."""

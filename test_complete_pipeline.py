@@ -47,7 +47,7 @@ async def test_complete_pipeline():
         print("   👑 Admin Bot: ✅ Running and responsive")
         
         # 4. Pipeline Connection Status
-        print(f"\n🔗 Pipeline Connection Status:")
+        print("\n🔗 Pipeline Connection Status:")
         print("   ✅ TelegramSource → MessageOrchestrator: Connected")
         print("   ✅ MessageOrchestrator → TelegramHandler: Connected") 
         print("   ✅ TelegramHandler → DiscordRelay: Connected")
@@ -65,7 +65,7 @@ async def test_complete_pipeline():
             print(f"   Bot Token: {getattr(pair, 'telegram_bot_name', 'Configured')}")
         
         # 6. Architecture Status  
-        print(f"\n🏗️ Architecture Status:")
+        print("\n🏗️ Architecture Status:")
         print("   ✅ Message callbacks properly registered")
         print("   ✅ Error handling middleware active")
         print("   ✅ Per-pair bot token system operational")
@@ -73,7 +73,7 @@ async def test_complete_pipeline():
         print("   ✅ Reply and edit message mapping ready")
         
         # Summary
-        print(f"\n" + "=" * 50)
+        print("\n" + "=" * 50)
         print("🎯 PIPELINE IMPLEMENTATION STATUS")
         print("=" * 50)
         
@@ -84,7 +84,7 @@ async def test_complete_pipeline():
             print("✅ Reply and edit functionality ready")
             print("✅ Error handling and logging active")
             
-            print(f"\n🧪 TESTING INSTRUCTIONS:")
+            print("\n🧪 TESTING INSTRUCTIONS:")
             print("=" * 30)
             print("1. Send a message to the source Telegram chat")
             print("2. Watch logs for message processing:")
@@ -97,13 +97,13 @@ async def test_complete_pipeline():
             print("5. Test replies: Reply to forwarded message")
             print("6. Test edits: Edit any sent message")
             
-            print(f"\n📊 Expected Message Flow:")
+            print("\n📊 Expected Message Flow:")
             print("📥 Telegram Source → 🔄 Orchestrator → 🎮 Discord → 📤 Telegram Dest")
             
             # Session issue note
             session_issue = not any(s.name == pair.session_name for s in healthy_sessions for pair in active_pairs)
             if session_issue:
-                print(f"\n⚠️  SESSION AUTHENTICATION NEEDED:")
+                print("\n⚠️  SESSION AUTHENTICATION NEEDED:")
                 print("   The session requires API credentials (api_id, api_hash)")
                 print("   Use /addsession command to properly authenticate")
             
@@ -122,7 +122,7 @@ async def test_complete_pipeline():
 
 async def show_message_flow():
     """Show detailed message flow for testing."""
-    print(f"\n🔄 COMPLETE MESSAGE FLOW DIAGRAM")
+    print("\n🔄 COMPLETE MESSAGE FLOW DIAGRAM")
     print("-" * 40)
     
     print("📱 TELEGRAM SOURCE CHAT")
@@ -141,10 +141,10 @@ async def show_message_flow():
     print("   ↓ (Bot API post)")
     print("💬 TELEGRAM DESTINATION CHAT")
     
-    print(f"\n✏️ EDIT FLOW:")
+    print("\n✏️ EDIT FLOW:")
     print("📝 Edit source message → Discord edit → Destination edit")
     
-    print(f"\n💬 REPLY FLOW:")
+    print("\n💬 REPLY FLOW:")
     print("↩️ Reply to source → Find mapping → Thread reply → Destination reply")
 
 

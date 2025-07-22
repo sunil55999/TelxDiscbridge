@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import List, Optional
+from datetime import datetime
 
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 from telegram import Update
@@ -125,95 +126,62 @@ class AdminHandler:
         if not self.application or not self.unified_commands:
             return
         
-        # Clean unified command handlers - no duplicates
-        command_handlers = [
-            # Core commands
-            ("start", self.unified_commands.start_command),
-            ("help", self.unified_commands.help_command),
-            ("status", self.unified_commands.status_command),
-            
-            # Bot token management
-            ("addbot", self.unified_commands.addbot_command),
-            ("listbots", self.unified_commands.listbots_command),
-            ("removebot", self.unified_commands.removebot_command),
-            ("testbot", self.unified_commands.testbot_command),
-            
-            # Filtering system
-            ("blockword", self.unified_commands.blockword_command),
-            ("unblockword", self.unified_commands.unblockword_command),
-            ("blockimage", self.unified_commands.blockimage_command),
-            ("showfilters", self.unified_commands.showfilters_command),
-            ("blockimages", self.unified_commands.blockimages_command),
-            ("allowimages", self.unified_commands.allowimages_command),
-            
-            # Session management
-            ("sessions", self.unified_commands.sessions_command),
-            
-            # Pair management
-            ("addpair", self.unified_commands.addpair_command),
-            ("listpairs", self.unified_commands.listpairs_command),
-            ("removepair", self.unified_commands.removepair_command),
-            
-            # System monitoring
-            ("health", self._health_check_command),
-        ]
-        
-        # Add session management command
+        command_handlers = {
+            "start": self.unified_commands.start_command,
+            "help": self.unified_commands.help_command,
+            "status": self.unified_commands.status_command,
+            "addbot": self.unified_commands.addbot_command,
+            "listbots": self.unified_commands.listbots_command,
+            "removebot": self.unified_commands.removebot_command,
+            "testbot": self.unified_commands.testbot_command,
+            "blockword": self.unified_commands.blockword_command,
+            "unblockword": self.unified_commands.unblockword_command,
+            "blockimage": self.unified_commands.blockimage_command,
+            "showfilters": self.unified_commands.showfilters_command,
+            "blockimages": self.unified_commands.blockimages_command,
+            "allowimages": self.unified_commands.allowimages_command,
+            "sessions": self.unified_commands.sessions_command,
+            "addpair": self.unified_commands.addpair_command,
+            "listpairs": self.unified_commands.listpairs_command,
+            "removepair": self.unified_commands.removepair_command,
+            "health": self._health_check_command,
+        }
+
         if self.session_commands:
-            command_handlers.append(("addsession", self.session_commands.addsession_command))
-        
-        for command_name, handler_func in command_handlers:
-            wrapped_handler = self._wrap_admin_handler(handler_func)
-            self.application.add_handler(CommandHandler(command_name, wrapped_handler))
-        
-        # Add session callback handlers for OTP
+            command_handlers["addsession"] = self.session_commands.addsession_command
+
+        for command_name, handler_func in command_handlers.items():
+            self.application.add_handler(CommandHandler(command_name, self._execute_command(handler_func)))
+
         if self.session_commands:
-            otp_callback_handler = self._wrap_admin_handler(self.session_commands.handle_otp_callback)
-            self.application.add_handler(CallbackQueryHandler(otp_callback_handler, pattern="^(enter_otp|resend_otp|cancel_otp):"))
-        
-        # Add message handler for OTP codes and pair creation
-        combined_text_handler = self._wrap_admin_handler(self._handle_combined_messages)
-        self.application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, combined_text_handler)
-        )
-        
-        # Add image message handler for hash generation
-        image_message_handler = self._wrap_admin_handler(self.unified_commands.handle_image_upload)
-        self.application.add_handler(
-            MessageHandler(filters.PHOTO, image_message_handler)
-        )
+            self.application.add_handler(CallbackQueryHandler(self._execute_command(self.session_commands.handle_otp_callback), pattern="^(enter_otp|resend_otp|cancel_otp):"))
+
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._execute_command(self._handle_combined_messages)))
+        self.application.add_handler(MessageHandler(filters.PHOTO, self._execute_command(self.unified_commands.handle_image_upload)))
         
         logger.info("Admin bot handlers setup complete")
-    
-    def _wrap_admin_handler(self, handler_func):
-        """Wrap handler function with admin permission check."""
+
+    def _execute_command(self, handler_func):
+        """Wrap handler function with admin permission check and error handling."""
         async def wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 user_id = update.effective_user.id
                 
-                # Debug logging for callbacks
-                if update.callback_query:
-                    logger.info(f"Callback received: {update.callback_query.data} from user {user_id}")
-                
-                # Check if user is admin
                 if user_id not in self.admin_user_ids:
                     if update.effective_message:
-                        await update.effective_message.reply_text(
-                            "❌ Access denied. You are not authorized to use this bot."
-                        )
+                        await update.effective_message.reply_text("❌ Access denied. You are not authorized to use this bot.")
                     logger.warning(f"Unauthorized access attempt from user {user_id}")
                     return
                 
-                # Call the actual handler
                 await handler_func(update, context)
                 
             except Exception as e:
-                logger.error(f"Error in admin handler: {e}")
+                logger.error(f"Error in admin handler: {e}", exc_info=True)
                 try:
                     if update.effective_message:
                         await update.effective_message.reply_text(f"❌ An error occurred: {e}")
-                except:
-                    pass  # Ignore errors when sending error messages
+                except Exception as send_error:
+                    logger.error(f"Failed to send error message to user: {send_error}")
         
         return wrapped_handler
     
@@ -251,105 +219,84 @@ class AdminHandler:
     # Additional admin commands
     async def _show_alerts_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show recent system alerts."""
-        try:
-            if not self.alert_system:
-                await update.message.reply_text("❌ Alert system not available")
-                return
-            
-            # Get alert stats and recent alerts
-            stats = await self.alert_system.get_alert_stats()
-            recent_alerts = await self.alert_system.get_recent_alerts(limit=10)
-            
-            message = f"🚨 **System Alerts Overview**\n\n"
-            message += f"**Statistics:**\n"
-            message += f"• Total alerts: {stats['total']}\n"
-            message += f"• Last 24h: {stats['recent_24h']}\n\n"
-            
-            if stats['by_level']:
-                message += "**By Level:**\n"
-                for level, count in stats['by_level'].items():
-                    emoji = {'info': 'ℹ️', 'warning': '⚠️', 'error': '❌', 'critical': '🚨'}.get(level, '📢')
-                    message += f"• {emoji} {level.upper()}: {count}\n"
-                message += "\n"
-            
-            if recent_alerts:
-                message += "**Recent Alerts (last 10):**\n"
-                for alert in recent_alerts[:5]:  # Show only 5 most recent
-                    timestamp = alert['timestamp'].strftime('%H:%M')
-                    level_emoji = {'info': 'ℹ️', 'warning': '⚠️', 'error': '❌', 'critical': '🚨'}.get(alert['level'], '📢')
-                    message += f"• {level_emoji} {timestamp} - {alert['title']}\n"
-            else:
-                message += "No recent alerts 🎉"
-            
-            await update.message.reply_text(message, parse_mode='Markdown')
-            
-        except Exception as e:
-            logger.error(f"Error showing alerts: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+        if not self.alert_system:
+            await update.message.reply_text("❌ Alert system not available")
+            return
+
+        stats = await self.alert_system.get_alert_stats()
+        recent_alerts = await self.alert_system.get_recent_alerts(limit=10)
+
+        message = f"🚨 **System Alerts Overview**\n\n"
+        message += f"**Statistics:**\n"
+        message += f"• Total alerts: {stats['total']}\n"
+        message += f"• Last 24h: {stats['recent_24h']}\n\n"
+
+        if stats['by_level']:
+            message += "**By Level:**\n"
+            for level, count in stats['by_level'].items():
+                emoji = {'info': 'ℹ️', 'warning': '⚠️', 'error': '❌', 'critical': '🚨'}.get(level, '📢')
+                message += f"• {emoji} {level.upper()}: {count}\n"
+            message += "\n"
+
+        if recent_alerts:
+            message += "**Recent Alerts (last 10):**\n"
+            for alert in recent_alerts[:5]:  # Show only 5 most recent
+                timestamp = alert['timestamp'].strftime('%H:%M')
+                level_emoji = {'info': 'ℹ️', 'warning': '⚠️', 'error': '❌', 'critical': '🚨'}.get(alert['level'], '📢')
+                message += f"• {level_emoji} {timestamp} - {alert['title']}\n"
+        else:
+            message += "No recent alerts 🎉"
+
+        await update.message.reply_text(message, parse_mode='Markdown')
     
     async def _show_logs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Show recent error logs."""
-        try:
-            # This would integrate with actual log system
-            message = "📋 **Recent System Logs**\n\n"
-            message += "✅ System operational\n"
-            message += "ℹ️ Use `/alerts` for alert history\n"
-            message += "📊 Use `/status` for detailed status\n\n"
-            message += "*Detailed log access available via system files*"
-            
-            await update.message.reply_text(message, parse_mode='Markdown')
-            
-        except Exception as e:
-            logger.error(f"Error showing logs: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+        message = "📋 **Recent System Logs**\n\n"
+        message += "✅ System operational\n"
+        message += "ℹ️ Use `/alerts` for alert history\n"
+        message += "📊 Use `/status` for detailed status\n\n"
+        message += "*Detailed log access available via system files*"
+
+        await update.message.reply_text(message, parse_mode='Markdown')
     
     async def _health_check_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Perform comprehensive system health check."""
+        health_msg = await update.message.reply_text("🔍 Performing health check...")
+
+        health_results = {
+            'database': '✅ Connected',
+            'sessions': '✅ Healthy',
+            'filters': '✅ Active',
+            'alerts': '✅ Running',
+            'memory': '✅ Normal'
+        }
+
         try:
-            health_msg = await update.message.reply_text("🔍 Performing health check...")
-            
-            health_results = {
-                'database': '✅ Connected',
-                'sessions': '✅ Healthy',
-                'filters': '✅ Active',
-                'alerts': '✅ Running',
-                'memory': '✅ Normal'
-            }
-            
-            # Check database
-            try:
-                pairs = await self.database.get_all_pairs()
-                if pairs is None:
-                    health_results['database'] = '❌ Connection failed'
-            except Exception:
-                health_results['database'] = '❌ Error'
-            
-            # Check message filter
-            if self.message_filter:
-                stats = await self.message_filter.get_filter_stats()
-                health_results['filters'] = f"✅ {stats['global_blocked_words']} words blocked"
-            else:
-                health_results['filters'] = '❌ Not initialized'
-            
-            # Check alert system
-            if self.alert_system and self.alert_system.running:
-                alert_stats = await self.alert_system.get_alert_stats()
-                health_results['alerts'] = f"✅ {alert_stats['recent_24h']} alerts (24h)"
-            else:
-                health_results['alerts'] = '❌ Not running'
-            
-            # Format results
-            message = "🏥 **System Health Check**\n\n"
-            for component, status in health_results.items():
-                message += f"**{component.title()}:** {status}\n"
-            
-            message += f"\n🕒 **Check completed at:** {datetime.now().strftime('%H:%M:%S')}"
-            
-            await health_msg.edit_text(message, parse_mode='Markdown')
-            
-        except Exception as e:
-            logger.error(f"Error in health check: {e}")
-            await update.message.reply_text(f"❌ Health check failed: {e}")
+            pairs = await self.database.get_all_pairs()
+            if pairs is None:
+                health_results['database'] = '❌ Connection failed'
+        except Exception:
+            health_results['database'] = '❌ Error'
+
+        if self.message_filter:
+            stats = await self.message_filter.get_filter_stats()
+            health_results['filters'] = f"✅ {stats['global_blocked_words']} words blocked"
+        else:
+            health_results['filters'] = '❌ Not initialized'
+
+        if self.alert_system and self.alert_system.running:
+            alert_stats = await self.alert_system.get_alert_stats()
+            health_results['alerts'] = f"✅ {alert_stats['recent_24h']} alerts (24h)"
+        else:
+            health_results['alerts'] = '❌ Not running'
+
+        message = "🏥 **System Health Check**\n\n"
+        for component, status in health_results.items():
+            message += f"**{component.title()}:** {status}\n"
+
+        message += f"\n🕒 **Check completed at:** {datetime.now().strftime('%H:%M:%S')}"
+
+        await health_msg.edit_text(message, parse_mode='Markdown')
     
     def add_admin_user(self, user_id: int):
         """Add a new admin user."""

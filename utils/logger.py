@@ -12,11 +12,21 @@ def setup_logger(log_level: str = "INFO", log_file: str = "forwarder_bot.log"):
     # Remove default handler
     logger.remove()
     
+    # Custom format with extra context
+    log_format = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+        "session:<yellow>{extra[session_name]}</yellow> | "
+        "pair:<blue>{extra[pair_id]}</blue> - "
+        "<level>{message}</level>"
+    )
+
     # Console handler with colored output
     logger.add(
         sys.stdout,
         level=log_level.upper(),
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+        format=log_format,
         colorize=True,
         backtrace=True,
         diagnose=True
@@ -29,13 +39,15 @@ def setup_logger(log_level: str = "INFO", log_file: str = "forwarder_bot.log"):
     logger.add(
         str(log_path),
         level="DEBUG",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+        format=log_format,
         rotation="10 MB",
         retention="30 days",
         compression="zip",
         backtrace=True,
         diagnose=True,
-        enqueue=True  # Thread-safe logging
+        enqueue=True,  # Thread-safe logging
+        # Default values for extra context
+        filter=lambda record: record.update(session_name=record["extra"].get("session_name", "N/A"), pair_id=record["extra"].get("pair_id", "N/A"))
     )
     
     # Error file handler for errors only
@@ -43,21 +55,22 @@ def setup_logger(log_level: str = "INFO", log_file: str = "forwarder_bot.log"):
     logger.add(
         str(error_log_path),
         level="ERROR",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+        format=log_format,
         rotation="5 MB",
         retention="60 days",
         compression="zip",
         backtrace=True,
         diagnose=True,
-        enqueue=True
+        enqueue=True,
+        filter=lambda record: record.update(session_name=record["extra"].get("session_name", "N/A"), pair_id=record["extra"].get("pair_id", "N/A"))
     )
     
     logger.info(f"Logger initialized - Level: {log_level}, File: {log_file}")
 
 
-def get_logger(name: str):
-    """Get a logger instance with a specific name."""
-    return logger.bind(name=name)
+def get_logger(name: str, session_name: str = None, pair_id: int = None):
+    """Get a logger instance with a specific name and context."""
+    return logger.patch(lambda record: record["extra"].update(session_name=session_name, pair_id=pair_id)).bind(name=name)
 
 
 def log_function_call(func):

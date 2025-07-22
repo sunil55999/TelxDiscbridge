@@ -161,15 +161,15 @@ class BotFunctionalityTester:
             
             # Test encryption
             encrypted = self.encryption_manager.encrypt(test_data)
-            self.add_test_result("Encryption - Encrypt", encrypted != test_data, f"Data encrypted successfully")
+            self.add_test_result("Encryption - Encrypt", encrypted != test_data, "Data encrypted successfully")
             
             # Test decryption
             decrypted = self.encryption_manager.decrypt(encrypted)
-            self.add_test_result("Encryption - Decrypt", decrypted == test_data, f"Data decrypted correctly")
+            self.add_test_result("Encryption - Decrypt", decrypted == test_data, "Data decrypted correctly")
             
             # Test with invalid data
             try:
-                invalid_decrypt = self.encryption_manager.decrypt("invalid_encrypted_data")
+                self.encryption_manager.decrypt("invalid_encrypted_data")
                 self.add_test_result("Encryption - Invalid Data", False, error="Should have failed with invalid data")
             except:
                 self.add_test_result("Encryption - Invalid Data", True, "Properly rejected invalid encrypted data")
@@ -188,7 +188,7 @@ class BotFunctionalityTester:
             
             # Test getting available bots (should be empty)
             bots = await self.bot_manager.get_available_bots()
-            self.add_test_result("Bot Token - Get Available", isinstance(bots, list), f"Retrieved {len(bots)} bots")
+            self.add_test_result("Bot Token - Get Available", isinstance(bots, list), "Retrieved available bots")
             
             # Test removing non-existent bot
             removed = await self.bot_manager.remove_bot_token("non_existent_bot")
@@ -204,7 +204,7 @@ class BotFunctionalityTester:
         try:
             # Test session health monitoring
             sessions = await self.database.get_all_sessions()
-            self.add_test_result("Session Management - Health Check", True, f"Checked {len(sessions)} sessions")
+            self.add_test_result("Session Management - Health Check", True, "Checked session health")
             
             # Test advanced session manager initialization
             await self.advanced_session_manager.start()
@@ -212,7 +212,7 @@ class BotFunctionalityTester:
             
             # Test getting session statistics
             stats = await self.advanced_session_manager.get_session_statistics()
-            self.add_test_result("Session Management - Statistics", isinstance(stats, dict), f"Retrieved session stats")
+            self.add_test_result("Session Management - Statistics", isinstance(stats, dict), "Retrieved session stats")
             
             await self.advanced_session_manager.stop()
             
@@ -230,7 +230,7 @@ class BotFunctionalityTester:
             
             # Test getting filter stats
             stats = await self.message_filter.get_filter_stats()
-            self.add_test_result("Message Filter - Get Stats", isinstance(stats, dict), f"Retrieved filter stats")
+            self.add_test_result("Message Filter - Get Stats", isinstance(stats, dict), "Retrieved filter stats")
             
             # Test removing blocked word
             removed = await self.message_filter.remove_global_blocked_word("spam")
@@ -358,7 +358,7 @@ class BotFunctionalityTester:
             
             # Test encryption error handling
             try:
-                bad_data = self.encryption_manager.decrypt("completely_invalid_data")
+                self.encryption_manager.decrypt("completely_invalid_data")
                 self.add_test_result("Error Handling - Decryption", False, error="Should have failed with invalid data")
             except:
                 self.add_test_result("Error Handling - Decryption", True, "Properly handled decryption errors")
