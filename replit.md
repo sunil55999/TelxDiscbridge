@@ -75,6 +75,18 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
+**July 22, 2025 - CRITICAL BUG FIXES: Session Storage & Bot Token Issues Resolved**
+✓ **FIXED DATABASE SCHEMA MISMATCH** - Added missing critical columns for bot token storage
+✓ **FIXED SESSION DATA STORAGE** - Resolved NULL session_data causing pair creation failures
+✓ **FIXED BOT TOKEN STORAGE** - Per-pair encrypted bot token storage now fully functional
+✓ **FIXED DISCORD WEBHOOK SUPPORT** - Added discord_webhook_url column to database
+✓ **MIGRATED DATABASE SUCCESSFULLY** - All existing data preserved with proper schema upgrade
+✓ **ENVIRONMENT CONFIGURATION VERIFIED** - All API credentials properly loaded and validated
+✓ **SESSION RECOVERY IMPLEMENTED** - Sessions marked for re-authentication with preserved metadata
+✓ **BOT STARTUP ISSUES RESOLVED** - All components running correctly with proper error handling
+✓ **COMPREHENSIVE TESTING TOOLS CREATED** - Migration, verification, and recovery scripts added
+✓ **"Error Creating Pair 'Token'" ISSUE FIXED** - Root cause database schema mismatch resolved
+
 **July 22, 2025 - OTP Handling Fix & Session Management Improvements**
 ✓ Fixed OTP input handling after "Enter OTP" button press
 ✓ Enhanced OTP message routing to correct session commands handler
