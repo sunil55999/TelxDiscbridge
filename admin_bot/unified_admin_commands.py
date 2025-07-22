@@ -397,45 +397,57 @@ class UnifiedAdminCommands:
             
             if not sessions:
                 await update.message.reply_text(
-                    "📭 **No Sessions Available**\n\n"
-                    "Use `/addsession <name> <phone>` to add a Telegram user session.\n\n"
-                    "**Example:**\n"
-                    "`/addsession mysession +1234567890`"
+                    "📭 No Sessions Available\n\n"
+                    "Use /addsession <name> <phone> to add a Telegram user session.\n\n"
+                    "Example:\n"
+                    "/addsession mysession +1234567890"
                 )
                 return
             
-            message = "👥 **Telegram Sessions**\n\n"
+            message = "👥 Telegram Sessions\n\n"
             
             for session in sessions:
                 status_emoji = {
                     'healthy': '✅',
                     'not_found': '❌',
                     'error': '⚠️',
-                    'deleted': '🗑️'
+                    'deleted': '🗑️',
+                    'needs_auth': '⏳'
                 }.get(session.health_status, '❓')
                 
-                message += f"**{session.name}**\n"
+                # Escape special markdown characters in session name and phone
+                session_name = session.name.replace('_', '\\_').replace('*', '\\*')
+                phone = (session.phone_number or 'Unknown').replace('_', '\\_')
+                
+                message += f"*{session_name}*\n"
                 message += f"{status_emoji} Status: {session.health_status}\n"
-                message += f"📱 Phone: {session.phone_number or 'Unknown'}\n"
+                message += f"📱 Phone: {phone}\n"
                 message += f"👤 Pairs: {session.pair_count}\n"
                 
                 if session.last_verified:
                     try:
                         if isinstance(session.last_verified, str):
-                            # Parse string datetime
+                            # Simple parsing without complex ISO handling
                             from datetime import datetime
-                            last_verified = datetime.fromisoformat(session.last_verified.replace('Z', '+00:00'))
+                            # Handle different datetime formats safely
+                            date_str = session.last_verified.split('.')[0]  # Remove microseconds
+                            if 'T' in date_str:
+                                last_verified = datetime.fromisoformat(date_str)
+                            else:
+                                last_verified = datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
                         else:
                             last_verified = session.last_verified
                         message += f"🕒 Last verified: {last_verified.strftime('%Y-%m-%d %H:%M')}\n"
-                    except:
-                        message += f"🕒 Last verified: {session.last_verified}\n"
+                    except Exception:
+                        # Fallback to raw string display
+                        safe_date = str(session.last_verified)[:16]  # Limit length
+                        message += f"🕒 Last verified: {safe_date}\n"
                 
                 message += "\n"
             
-            message += "**Commands:**\n"
-            message += "• `/addsession <name> <phone>` - Add new session\n"
-            message += "• `/changesession <pair_id> <session>` - Change pair session"
+            message += "Commands:\n"
+            message += "• /addsession <name> <phone> - Add new session\n"
+            message += "• /changesession <pair_id> <session> - Change pair session"
             
             await update.message.reply_text(message, parse_mode='Markdown')
             
