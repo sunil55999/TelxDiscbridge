@@ -1007,3 +1007,93 @@ class UnifiedAdminCommands:
         except Exception as e:
             logger.error(f"Error in Discord webhook creation: {e}")
             return None
+
+    async def testbot_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Test bot permissions in a specific chat."""
+        if not update.message:
+            return
+            
+        try:
+            if len(context.args) < 2:
+                await update.message.reply_text(
+                    "**Test Bot Permissions**\n\n"
+                    "Usage: `/testbot <bot_name> <chat_id>`\n\n" 
+                    "**Example:**\n"
+                    "`/testbot MyBot -1001234567890`\n\n"
+                    "This will test if the bot can send messages to the specified chat.",
+                    parse_mode='Markdown'
+                )
+                return
+                
+            bot_name = context.args[0]
+            try:
+                chat_id = int(context.args[1])
+            except ValueError:
+                await update.message.reply_text("❌ Invalid chat ID format. Use numbers like -1001234567890")
+                return
+            
+            # Get bot token
+            bot_token = await self.bot_manager.get_bot_token_by_name(bot_name)
+            if not bot_token:
+                available_bots = await self.bot_manager.get_available_bots()
+                bot_names = [b['name'] for b in available_bots]
+                await update.message.reply_text(
+                    f"❌ Bot '{bot_name}' not found.\n\n"
+                    f"Available bots: {', '.join(bot_names) if bot_names else 'None'}"
+                )
+                return
+            
+            await update.message.reply_text(f"🔍 Testing bot '{bot_name}' permissions for chat {chat_id}...")
+            
+            # Import validation class
+            from core.bot_token_manager import BotTokenValidator
+            
+            # Test bot token validity
+            token_validation = await BotTokenValidator.validate_bot_token(bot_token)
+            if not token_validation['valid']:
+                await update.message.reply_text(
+                    f"❌ **Bot Token Invalid**\n\n"
+                    f"Error: {token_validation['error']}"
+                )
+                return
+            
+            # Test chat permissions
+            chat_validation = await BotTokenValidator.validate_chat_permissions(bot_token, chat_id)
+            if not chat_validation['valid']:
+                await update.message.reply_text(
+                    f"❌ **Bot Permission Error**\n\n"
+                    f"Error: {chat_validation['error']}\n\n"
+                    "**Common Solutions:**\n"
+                    "• Add bot to the destination chat\n"
+                    "• Give bot 'Send Messages' permission\n"
+                    "• For channels: Give 'Post Messages' permission\n"
+                    "• Make sure chat ID is correct"
+                )
+                return
+            
+            # Test sending message
+            test_result = await BotTokenValidator.send_test_message(bot_token, chat_id)
+            
+            if test_result['valid']:
+                await update.message.reply_text(
+                    f"✅ **Bot Permission Test PASSED**\n\n"
+                    f"**Bot:** @{token_validation['username']}\n"
+                    f"**Chat:** {chat_id}\n"
+                    f"**Status:** {chat_validation['status']}\n"
+                    f"**Send Messages:** {chat_validation['can_send_messages']}\n"
+                    f"**Send Media:** {chat_validation['can_send_media']}\n"
+                    f"**Edit Messages:** {chat_validation['can_edit_messages']}\n"
+                    f"**Delete Messages:** {chat_validation['can_delete_messages']}\n\n"
+                    "The bot is ready for forwarding!"
+                )
+            else:
+                await update.message.reply_text(
+                    f"⚠️ **Permission Test Warning**\n\n"
+                    f"Bot has basic permissions but test message failed:\n"
+                    f"{test_result['error']}\n\n"
+                    "Please check the destination chat for any restrictions."
+                )
+            
+        except Exception as e:
+            logger.error(f"Error in testbot command: {e}")
+            await update.message.reply_text(f"❌ Error testing bot permissions: {e}")

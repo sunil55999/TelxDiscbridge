@@ -136,6 +136,7 @@ class AdminHandler:
             ("addbot", self.unified_commands.addbot_command),
             ("listbots", self.unified_commands.listbots_command),
             ("removebot", self.unified_commands.removebot_command),
+            ("testbot", self.unified_commands.testbot_command),
             
             # Filtering system
             ("blockword", self.unified_commands.blockword_command),
