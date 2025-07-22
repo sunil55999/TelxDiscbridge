@@ -24,19 +24,21 @@ class BotTokenValidator:
         try:
             bot = Bot(token=token)
             
-            # Test basic bot connectivity
-            me = await bot.get_me()
-            
-            return {
-                'valid': True,
-                'bot_id': me.id,
-                'username': me.username,
-                'first_name': me.first_name,
-                'can_join_groups': me.can_join_groups,
-                'can_read_all_group_messages': me.can_read_all_group_messages,
-                'supports_inline_queries': me.supports_inline_queries,
-                'error': None
-            }
+            # Initialize bot for v21+ compatibility
+            async with bot:
+                # Test basic bot connectivity
+                me = await bot.get_me()
+                
+                return {
+                    'valid': True,
+                    'bot_id': me.id,
+                    'username': me.username,
+                    'first_name': me.first_name,
+                    'can_join_groups': me.can_join_groups,
+                    'can_read_all_group_messages': me.can_read_all_group_messages,
+                    'supports_inline_queries': me.supports_inline_queries,
+                    'error': None
+                }
             
         except Forbidden:
             return {
@@ -70,33 +72,35 @@ class BotTokenValidator:
         try:
             bot = Bot(token=token)
             
-            # Try to get chat member (bot) info
-            chat_member = await bot.get_chat_member(chat_id, bot.id)
-            
-            # Check bot permissions
-            can_send_messages = True
-            can_send_media = True
-            can_edit_messages = True
-            can_delete_messages = True
-            
-            if hasattr(chat_member, 'can_send_messages'):
-                can_send_messages = chat_member.can_send_messages
-            if hasattr(chat_member, 'can_send_media_messages'):
-                can_send_media = chat_member.can_send_media_messages
-            if hasattr(chat_member, 'can_edit_messages'):
-                can_edit_messages = chat_member.can_edit_messages
-            if hasattr(chat_member, 'can_delete_messages'):
-                can_delete_messages = chat_member.can_delete_messages
-            
-            return {
-                'valid': True,
-                'status': chat_member.status,
-                'can_send_messages': can_send_messages,
-                'can_send_media': can_send_media,
-                'can_edit_messages': can_edit_messages,
-                'can_delete_messages': can_delete_messages,
-                'error': None
-            }
+            # Initialize bot for v21+ compatibility
+            async with bot:
+                # Try to get chat member (bot) info
+                chat_member = await bot.get_chat_member(chat_id, bot.id)
+                
+                # Check bot permissions
+                can_send_messages = True
+                can_send_media = True
+                can_edit_messages = True
+                can_delete_messages = True
+                
+                if hasattr(chat_member, 'can_send_messages'):
+                    can_send_messages = chat_member.can_send_messages
+                if hasattr(chat_member, 'can_send_media_messages'):
+                    can_send_media = chat_member.can_send_media_messages
+                if hasattr(chat_member, 'can_edit_messages'):
+                    can_edit_messages = chat_member.can_edit_messages
+                if hasattr(chat_member, 'can_delete_messages'):
+                    can_delete_messages = chat_member.can_delete_messages
+                
+                return {
+                    'valid': True,
+                    'status': chat_member.status,
+                    'can_send_messages': can_send_messages,
+                    'can_send_media': can_send_media,
+                    'can_edit_messages': can_edit_messages,
+                    'can_delete_messages': can_delete_messages,
+                    'error': None
+                }
             
         except BadRequest as e:
             if 'chat not found' in str(e).lower():
@@ -136,23 +140,25 @@ class BotTokenValidator:
         try:
             bot = Bot(token=token)
             
-            # Send test message
-            test_message = "🤖 Bot token validation successful! This message will be deleted shortly."
-            message = await bot.send_message(chat_id, test_message)
-            
-            # Try to delete the test message after a short delay
-            await asyncio.sleep(2)
-            try:
-                await bot.delete_message(chat_id, message.message_id)
-            except Exception:
-                # Deletion failed, but sending worked
-                pass
-            
-            return {
-                'valid': True,
-                'message_id': message.message_id,
-                'error': None
-            }
+            # Initialize bot for v21+ compatibility
+            async with bot:
+                # Send test message
+                test_message = "🤖 Bot token validation successful! This message will be deleted shortly."
+                message = await bot.send_message(chat_id, test_message)
+                
+                # Try to delete the test message after a short delay
+                await asyncio.sleep(2)
+                try:
+                    await bot.delete_message(chat_id, message.message_id)
+                except Exception:
+                    # Deletion failed, but sending worked
+                    pass
+                
+                return {
+                    'valid': True,
+                    'message_id': message.message_id,
+                    'error': None
+                }
             
         except Exception as e:
             return {
