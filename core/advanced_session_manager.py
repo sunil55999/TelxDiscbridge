@@ -22,7 +22,7 @@ class WorkerGroup:
     pair_ids: List[int]
     max_pairs: int = 30
     is_active: bool = True
-    created_at: datetime = None
+    created_at: Optional[datetime] = None
     last_health_check: Optional[datetime] = None
     
     def __post_init__(self):
@@ -38,7 +38,7 @@ class SessionHealthCheck:
     status: str
     last_verified: datetime
     error_message: Optional[str] = None
-    pair_access_status: Dict[int, bool] = None
+    pair_access_status: Optional[Dict[int, bool]] = None
     
     def __post_init__(self):
         if self.pair_access_status is None:
