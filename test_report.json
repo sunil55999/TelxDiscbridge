@@ -1,0 +1,411 @@
+{
+  "timestamp": "2025-07-22T10:49:46.615516",
+  "summary": {
+    "total_tests": 25,
+    "passed": 25,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "categories": {
+    "Database": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Database - Add Session",
+          "passed": true,
+          "details": "Session ID: 1",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.704265"
+        },
+        {
+          "test_name": "Database - Get Sessions",
+          "passed": true,
+          "details": "Found 1 sessions",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.716294"
+        },
+        {
+          "test_name": "Database - Add Pair",
+          "passed": true,
+          "details": "Pair ID: 1",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.811858"
+        },
+        {
+          "test_name": "Database - Get Pairs",
+          "passed": true,
+          "details": "Found 1 pairs",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.830104"
+        }
+      ]
+    },
+    "Encryption": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Encryption - Encrypt",
+          "passed": true,
+          "details": "Data encrypted successfully",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.875690"
+        },
+        {
+          "test_name": "Encryption - Decrypt",
+          "passed": true,
+          "details": "Data decrypted correctly",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.876094"
+        },
+        {
+          "test_name": "Encryption - Invalid Data",
+          "passed": true,
+          "details": "Properly rejected invalid encrypted data",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:45.876486"
+        }
+      ]
+    },
+    "Bot Token": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Bot Token - Invalid Token",
+          "passed": true,
+          "details": "Properly rejected invalid token",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.487229"
+        },
+        {
+          "test_name": "Bot Token - Get Available",
+          "passed": true,
+          "details": "Retrieved 0 bots",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.487344"
+        },
+        {
+          "test_name": "Bot Token - Remove Non-existent",
+          "passed": true,
+          "details": "Properly handled non-existent bot",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.487402"
+        }
+      ]
+    },
+    "Session Management": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Session Management - Health Check",
+          "passed": true,
+          "details": "Checked 1 sessions",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.503926"
+        },
+        {
+          "test_name": "Session Management - Advanced Manager Start",
+          "passed": true,
+          "details": "Advanced session manager started",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.576861"
+        },
+        {
+          "test_name": "Session Management - Statistics",
+          "passed": true,
+          "details": "Retrieved session stats",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.587763"
+        }
+      ]
+    },
+    "Message Filter": {
+      "passed": 4,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Message Filter - Add Blocked Word",
+          "passed": true,
+          "details": "Added 'spam' to blocked words",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589025"
+        },
+        {
+          "test_name": "Message Filter - Get Stats",
+          "passed": true,
+          "details": "Retrieved filter stats",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589098"
+        },
+        {
+          "test_name": "Message Filter - Remove Blocked Word",
+          "passed": true,
+          "details": "Removed 'spam' from blocked words",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589340"
+        },
+        {
+          "test_name": "Message Filter - Update Settings",
+          "passed": true,
+          "details": "Updated global filter settings",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589593"
+        }
+      ]
+    },
+    "Commands": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Commands - Start Command",
+          "passed": true,
+          "details": "Start command executed",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589849"
+        },
+        {
+          "test_name": "Commands - Help Command",
+          "passed": true,
+          "details": "Help command executed",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.589915"
+        },
+        {
+          "test_name": "Commands - Status Command",
+          "passed": true,
+          "details": "Status command executed",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.613167"
+        }
+      ]
+    },
+    "Pair Creation": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Pair Creation - Start Wizard",
+          "passed": true,
+          "details": "Pair creation wizard started",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.613482"
+        },
+        {
+          "test_name": "Pair Creation - Handle Input",
+          "passed": true,
+          "details": "Wizard input handled correctly",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.613569"
+        }
+      ]
+    },
+    "Error Handling": {
+      "passed": 3,
+      "failed": 0,
+      "tests": [
+        {
+          "test_name": "Error Handling - Database Connection",
+          "passed": true,
+          "details": "Properly handled invalid database connection",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.613771"
+        },
+        {
+          "test_name": "Error Handling - Decryption",
+          "passed": true,
+          "details": "Properly handled decryption errors",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.614034"
+        },
+        {
+          "test_name": "Error Handling - Missing Parameters",
+          "passed": true,
+          "details": "Properly showed usage help for missing parameters",
+          "error": "",
+          "timestamp": "2025-07-22T10:49:46.614470"
+        }
+      ]
+    }
+  },
+  "detailed_results": [
+    {
+      "test_name": "Database - Add Session",
+      "passed": true,
+      "details": "Session ID: 1",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.704265"
+    },
+    {
+      "test_name": "Database - Get Sessions",
+      "passed": true,
+      "details": "Found 1 sessions",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.716294"
+    },
+    {
+      "test_name": "Database - Add Pair",
+      "passed": true,
+      "details": "Pair ID: 1",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.811858"
+    },
+    {
+      "test_name": "Database - Get Pairs",
+      "passed": true,
+      "details": "Found 1 pairs",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.830104"
+    },
+    {
+      "test_name": "Encryption - Encrypt",
+      "passed": true,
+      "details": "Data encrypted successfully",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.875690"
+    },
+    {
+      "test_name": "Encryption - Decrypt",
+      "passed": true,
+      "details": "Data decrypted correctly",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.876094"
+    },
+    {
+      "test_name": "Encryption - Invalid Data",
+      "passed": true,
+      "details": "Properly rejected invalid encrypted data",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:45.876486"
+    },
+    {
+      "test_name": "Bot Token - Invalid Token",
+      "passed": true,
+      "details": "Properly rejected invalid token",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.487229"
+    },
+    {
+      "test_name": "Bot Token - Get Available",
+      "passed": true,
+      "details": "Retrieved 0 bots",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.487344"
+    },
+    {
+      "test_name": "Bot Token - Remove Non-existent",
+      "passed": true,
+      "details": "Properly handled non-existent bot",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.487402"
+    },
+    {
+      "test_name": "Session Management - Health Check",
+      "passed": true,
+      "details": "Checked 1 sessions",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.503926"
+    },
+    {
+      "test_name": "Session Management - Advanced Manager Start",
+      "passed": true,
+      "details": "Advanced session manager started",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.576861"
+    },
+    {
+      "test_name": "Session Management - Statistics",
+      "passed": true,
+      "details": "Retrieved session stats",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.587763"
+    },
+    {
+      "test_name": "Message Filter - Add Blocked Word",
+      "passed": true,
+      "details": "Added 'spam' to blocked words",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589025"
+    },
+    {
+      "test_name": "Message Filter - Get Stats",
+      "passed": true,
+      "details": "Retrieved filter stats",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589098"
+    },
+    {
+      "test_name": "Message Filter - Remove Blocked Word",
+      "passed": true,
+      "details": "Removed 'spam' from blocked words",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589340"
+    },
+    {
+      "test_name": "Message Filter - Update Settings",
+      "passed": true,
+      "details": "Updated global filter settings",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589593"
+    },
+    {
+      "test_name": "Commands - Start Command",
+      "passed": true,
+      "details": "Start command executed",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589849"
+    },
+    {
+      "test_name": "Commands - Help Command",
+      "passed": true,
+      "details": "Help command executed",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.589915"
+    },
+    {
+      "test_name": "Commands - Status Command",
+      "passed": true,
+      "details": "Status command executed",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.613167"
+    },
+    {
+      "test_name": "Pair Creation - Start Wizard",
+      "passed": true,
+      "details": "Pair creation wizard started",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.613482"
+    },
+    {
+      "test_name": "Pair Creation - Handle Input",
+      "passed": true,
+      "details": "Wizard input handled correctly",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.613569"
+    },
+    {
+      "test_name": "Error Handling - Database Connection",
+      "passed": true,
+      "details": "Properly handled invalid database connection",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.613771"
+    },
+    {
+      "test_name": "Error Handling - Decryption",
+      "passed": true,
+      "details": "Properly handled decryption errors",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.614034"
+    },
+    {
+      "test_name": "Error Handling - Missing Parameters",
+      "passed": true,
+      "details": "Properly showed usage help for missing parameters",
+      "error": "",
+      "timestamp": "2025-07-22T10:49:46.614470"
+    }
+  ]
+}

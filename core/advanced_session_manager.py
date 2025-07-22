@@ -90,6 +90,51 @@ class AdvancedSessionManager:
             self.running = False
             raise
     
+    async def get_session_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive session statistics."""
+        try:
+            sessions = await self.database.get_all_sessions()
+            
+            stats = {
+                'total_sessions': len(sessions),
+                'healthy_sessions': len([s for s in sessions if s.health_status == 'healthy']),
+                'active_sessions': len([s for s in sessions if s.is_active]),
+                'sessions_by_status': {},
+                'total_pair_capacity': 0,
+                'used_pair_capacity': 0,
+                'worker_distribution': {}
+            }
+            
+            for session in sessions:
+                # Count by status
+                status = session.health_status
+                stats['sessions_by_status'][status] = stats['sessions_by_status'].get(status, 0) + 1
+                
+                # Calculate capacity
+                stats['total_pair_capacity'] += session.max_pairs
+                stats['used_pair_capacity'] += session.pair_count
+                
+                # Worker distribution
+                worker_id = session.worker_id or 'unassigned'
+                stats['worker_distribution'][worker_id] = stats['worker_distribution'].get(worker_id, 0) + 1
+            
+            # Calculate utilization
+            if stats['total_pair_capacity'] > 0:
+                stats['capacity_utilization'] = (stats['used_pair_capacity'] / stats['total_pair_capacity']) * 100
+            else:
+                stats['capacity_utilization'] = 0
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Error getting session statistics: {e}")
+            return {
+                'error': str(e),
+                'total_sessions': 0,
+                'healthy_sessions': 0,
+                'active_sessions': 0
+            }
+
     async def stop(self):
         """Stop the advanced session manager."""
         if not self.running:

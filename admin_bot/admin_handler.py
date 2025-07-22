@@ -149,7 +149,9 @@ class AdminHandler:
             ("sessions", self.unified_commands.sessions_command),
             
             # Pair management
+            ("addpair", self.unified_commands.addpair_command),
             ("listpairs", self.unified_commands.listpairs_command),
+            ("removepair", self.unified_commands.removepair_command),
             
             # System monitoring
             ("health", self._health_check_command),
@@ -168,12 +170,11 @@ class AdminHandler:
             otp_callback_handler = self._wrap_admin_handler(self.session_commands.handle_otp_callback)
             self.application.add_handler(CallbackQueryHandler(otp_callback_handler, pattern="^(enter_otp|resend_otp|cancel_otp):"))
         
-        # Add message handler for OTP codes only
-        if self.session_commands:
-            text_message_handler = self._wrap_admin_handler(self.session_commands.handle_text_message)
-            self.application.add_handler(
-                MessageHandler(filters.TEXT & ~filters.COMMAND, text_message_handler)
-            )
+        # Add message handler for OTP codes and pair creation
+        combined_text_handler = self._wrap_admin_handler(self._handle_combined_messages)
+        self.application.add_handler(
+            MessageHandler(filters.TEXT & ~filters.COMMAND, combined_text_handler)
+        )
         
         # Add image message handler for hash generation
         image_message_handler = self._wrap_admin_handler(self.unified_commands.handle_image_upload)
@@ -231,9 +232,9 @@ class AdminHandler:
                 await self.pair_wizard.handle_wizard_input(update, context)
                 return
         
-        # Try enhanced pair creation
-        if self.enhanced_commands and hasattr(self.enhanced_commands, 'handle_enhanced_pair_creation'):
-            handled = await self.enhanced_commands.handle_enhanced_pair_creation(update, context)
+        # Try unified pair creation
+        if self.unified_commands and hasattr(self.unified_commands, 'handle_pair_creation_input'):
+            handled = await self.unified_commands.handle_pair_creation_input(update, context)
             if handled:
                 return
         

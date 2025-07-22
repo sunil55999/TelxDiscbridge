@@ -293,6 +293,43 @@ class Database:
                 logger.error(f"Failed to update pair {pair.id}: {e}")
                 return False
     
+    async def add_session(self, session: SessionInfo) -> Optional[int]:
+        """Add a new session to the database."""
+        async with self.Session() as db_session:
+            try:
+                db_session_obj = SessionModel(
+                    name=session.name,
+                    phone_number=session.phone_number or "",
+                    is_active=session.is_active,
+                    health_status=session.health_status,
+                    last_verified=session.last_verified,
+                    pair_count=session.pair_count,
+                    worker_id=session.worker_id,
+                    max_pairs=session.max_pairs,
+                    priority=session.priority,
+                    metadata_info=session.metadata_info or {}
+                )
+                
+                db_session.add(db_session_obj)
+                await db_session.commit()
+                await db_session.refresh(db_session_obj)
+                
+                logger.info(f"Added session: {session.name} (ID: {db_session_obj.id})")
+                return db_session_obj.id
+                
+            except Exception as e:
+                await db_session.rollback()
+                logger.error(f"Failed to add session: {e}")
+                return None
+    
+    async def get_pair_by_id(self, pair_id: int) -> Optional[ForwardingPair]:
+        """Get a forwarding pair by ID - alias for get_pair."""
+        return await self.get_pair(pair_id)
+    
+    async def remove_pair(self, pair_id: int) -> bool:
+        """Remove a forwarding pair - alias for delete_pair."""
+        return await self.delete_pair(pair_id)
+    
     async def delete_pair(self, pair_id: int) -> bool:
         """Delete a forwarding pair."""
         async with self.Session() as session:

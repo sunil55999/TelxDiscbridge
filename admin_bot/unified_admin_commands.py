@@ -447,6 +447,79 @@ class UnifiedAdminCommands:
     # PAIR MANAGEMENT
     # =============================================================================
     
+    async def addpair_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Interactive pair creation command."""
+        if not update.message:
+            return
+            
+        try:
+            # Start interactive pair creation wizard
+            user_data = context.user_data
+            user_data.clear()
+            user_data['creating_pair'] = True
+            user_data['step'] = 'name'
+            
+            welcome_message = (
+                "🚀 **Create New Forwarding Pair**\n\n"
+                "I'll guide you through creating a forwarding pair step by step.\n\n"
+                "**Step 1/6:** Enter a unique name for this forwarding pair:"
+            )
+            
+            await update.message.reply_text(welcome_message, parse_mode='Markdown')
+            
+        except Exception as e:
+            logger.error(f"Error in addpair command: {e}")
+            await update.message.reply_text(f"❌ Error starting pair creation: {e}")
+    
+    async def removepair_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Remove a forwarding pair."""
+        if not update.message:
+            return
+            
+        try:
+            if not context.args:
+                await update.message.reply_text(
+                    "**Remove Forwarding Pair**\n\n"
+                    "Usage: `/removepair <pair_id>`\n\n"
+                    "Use `/listpairs` to see available pair IDs.\n\n"
+                    "**Example:**\n"
+                    "`/removepair 5`"
+                )
+                return
+            
+            pair_id = int(context.args[0])
+            
+            # Get pair details first
+            pair = await self.database.get_pair_by_id(pair_id)
+            if not pair:
+                await update.message.reply_text(
+                    f"❌ **Pair Not Found**\n\n"
+                    f"No forwarding pair with ID {pair_id} exists.\n"
+                    f"Use `/listpairs` to see available pairs."
+                )
+                return
+            
+            # Remove the pair
+            success = await self.database.remove_pair(pair_id)
+            
+            if success:
+                await update.message.reply_text(
+                    f"✅ **Pair Removed**\n\n"
+                    f"Forwarding pair '{pair.name}' (ID: {pair_id}) has been deleted.\n"
+                    f"All associated data has been cleaned up."
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ **Failed to Remove Pair**\n\n"
+                    f"Could not delete pair {pair_id}. Please try again."
+                )
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid pair ID. Please provide a number.")
+        except Exception as e:
+            logger.error(f"Error in removepair command: {e}")
+            await update.message.reply_text(f"❌ Error removing pair: {e}")
+
     async def listpairs_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """List all forwarding pairs."""
         if not update.message:
@@ -469,7 +542,7 @@ class UnifiedAdminCommands:
             message = "🔗 **Forwarding Pairs**\n\n"
             
             for pair in pairs:
-                status = "🟢 Active" if pair.enabled else "🔴 Disabled"
+                status = "🟢 Active" if pair.is_active else "🔴 Disabled"
                 message += f"**{pair.id}. {pair.name}**\n"
                 message += f"{status}\n"
                 message += f"📤 Source: `{pair.telegram_source_chat_id}`\n"
@@ -502,7 +575,7 @@ class UnifiedAdminCommands:
             pairs = await self.database.get_all_pairs() or []
             sessions = await self.database.get_all_sessions() or []
             
-            active_pairs = len([p for p in pairs if p.enabled])
+            active_pairs = len([p for p in pairs if p.is_active])
             healthy_sessions = len([s for s in sessions if s.health_status == 'healthy'])
             
             # Get filter stats
@@ -583,3 +656,230 @@ class UnifiedAdminCommands:
         except Exception as e:
             logger.error(f"Error handling image upload: {e}")
             await update.message.reply_text(f"❌ Error processing image: {e}")
+    
+    # =============================================================================
+    # PAIR CREATION WIZARD
+    # =============================================================================
+    
+    async def handle_pair_creation_input(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+        """Handle input during pair creation process."""
+        user_data = context.user_data
+        
+        if not user_data.get('creating_pair'):
+            return False
+        
+        step = user_data.get('step')
+        text = update.message.text.strip()
+        
+        try:
+            if step == 'name':
+                user_data['name'] = text
+                user_data['step'] = 'source_chat'
+                await update.message.reply_text(
+                    "**Step 2/6:** Enter the source Telegram chat ID (where messages come from):\n\n"
+                    "💡 Forward a message from the chat and use /chatinfo to get the ID.\n"
+                    "💡 For channels, use the channel username or ID.",
+                    parse_mode='Markdown'
+                )
+                return True
+                
+            elif step == 'source_chat':
+                try:
+                    user_data['source_chat'] = int(text)
+                except ValueError:
+                    await update.message.reply_text("❌ Please enter a valid chat ID (numbers only)")
+                    return True
+                
+                user_data['step'] = 'discord_webhook'
+                await update.message.reply_text(
+                    "**Step 3/6:** Enter the Discord webhook URL:\n\n"
+                    "💡 Create a webhook in your Discord channel settings.\n"
+                    "💡 Right-click channel → Integrations → Webhooks → New Webhook",
+                    parse_mode='Markdown'
+                )
+                return True
+                
+            elif step == 'discord_webhook':
+                if not text.startswith('https://discord.com/api/webhooks/'):
+                    await update.message.reply_text("❌ Please enter a valid Discord webhook URL")
+                    return True
+                
+                user_data['discord_webhook'] = text
+                user_data['step'] = 'dest_chat'
+                await update.message.reply_text(
+                    "**Step 4/6:** Enter the destination Telegram chat ID (where messages go):\n\n"
+                    "💡 This is where forwarded messages will be posted.\n"
+                    "💡 Make sure the bot has posting permissions.",
+                    parse_mode='Markdown'
+                )
+                return True
+                
+            elif step == 'dest_chat':
+                try:
+                    user_data['dest_chat'] = int(text)
+                except ValueError:
+                    await update.message.reply_text("❌ Please enter a valid chat ID (numbers only)")
+                    return True
+                
+                # Show available sessions
+                sessions = await self.database.get_all_sessions()
+                if not sessions:
+                    await update.message.reply_text(
+                        "❌ **No Sessions Available**\n\n"
+                        "You need to add a Telegram session first.\n"
+                        "Use `/addsession` to add a session, then try creating the pair again."
+                    )
+                    user_data.clear()
+                    return True
+                
+                session_list = "\n".join([f"• {s.session_name}" for s in sessions])
+                user_data['step'] = 'session'
+                await update.message.reply_text(
+                    f"**Step 5/6:** Choose a Telegram session:\n\n"
+                    f"**Available sessions:**\n{session_list}\n\n"
+                    f"Enter the session name:",
+                    parse_mode='Markdown'
+                )
+                return True
+                
+            elif step == 'session':
+                # Validate session exists
+                sessions = await self.database.get_all_sessions()
+                valid_sessions = [s.session_name for s in sessions]
+                
+                if text not in valid_sessions:
+                    await update.message.reply_text(
+                        f"❌ Invalid session name. Available sessions:\n"
+                        f"{', '.join(valid_sessions)}"
+                    )
+                    return True
+                
+                user_data['session'] = text
+                
+                # Show available bots
+                bots = await self.bot_manager.get_available_bots()
+                if not bots:
+                    await update.message.reply_text(
+                        "❌ **No Bot Tokens Available**\n\n"
+                        "You need to add a bot token first.\n"
+                        "Use `/addbot` to add a bot token, then try creating the pair again."
+                    )
+                    user_data.clear()
+                    return True
+                
+                bot_list = "\n".join([f"• {b['name']} (@{b['username']})" for b in bots])
+                user_data['step'] = 'bot'
+                await update.message.reply_text(
+                    f"**Step 6/6:** Choose a bot token for posting:\n\n"
+                    f"**Available bots:**\n{bot_list}\n\n"
+                    f"Enter the bot name:",
+                    parse_mode='Markdown'
+                )
+                return True
+                
+            elif step == 'bot':
+                # Validate bot exists
+                bots = await self.bot_manager.get_available_bots()
+                selected_bot = None
+                
+                for bot in bots:
+                    if bot['name'] == text:
+                        selected_bot = bot
+                        break
+                
+                if not selected_bot:
+                    bot_names = [b['name'] for b in bots]
+                    await update.message.reply_text(
+                        f"❌ Invalid bot name. Available bots:\n"
+                        f"{', '.join(bot_names)}"
+                    )
+                    return True
+                
+                # Create the pair
+                await self._create_pair_from_wizard(update, context, selected_bot)
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error in pair creation wizard: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+            user_data.clear()
+            
+        return False
+    
+    async def _create_pair_from_wizard(self, update: Update, context: ContextTypes.DEFAULT_TYPE, selected_bot: Dict[str, Any]):
+        """Create the forwarding pair from wizard data."""
+        user_data = context.user_data
+        
+        try:
+            # Validate bot token and permissions
+            bot_token = selected_bot['token']
+            dest_chat = user_data['dest_chat']
+            
+            from core.bot_token_manager import BotTokenValidator
+            
+            # Validate chat permissions
+            chat_validation = await BotTokenValidator.validate_chat_permissions(bot_token, dest_chat)
+            if not chat_validation['valid']:
+                await update.message.reply_text(
+                    f"❌ **Bot Permission Error**\n\n"
+                    f"The bot cannot post to chat {dest_chat}.\n\n"
+                    f"**Error:** {chat_validation['error']}\n\n"
+                    "Please add the bot to the destination chat and grant posting permissions."
+                )
+                user_data.clear()
+                return
+            
+            # Send test message
+            test_result = await BotTokenValidator.send_test_message(bot_token, dest_chat)
+            if not test_result['valid']:
+                await update.message.reply_text(
+                    f"⚠️ **Warning: Test Message Failed**\n\n"
+                    f"The bot has permissions but test message failed:\n"
+                    f"{test_result['error']}\n\n"
+                    "Creating pair anyway, but please verify the bot can post."
+                )
+            
+            # Encrypt bot token
+            encrypted_token = self.encryption_manager.encrypt(bot_token)
+            
+            # Create pair object
+            from core.database import ForwardingPair
+            pair = ForwardingPair(
+                name=user_data['name'],
+                telegram_source_chat_id=user_data['source_chat'],
+                discord_channel_id=0,  # Using webhook instead
+                telegram_dest_chat_id=user_data['dest_chat'],
+                telegram_bot_token_encrypted=encrypted_token,
+                telegram_bot_name=selected_bot['name'],
+                discord_webhook_url=user_data['discord_webhook'],
+                session_name=user_data['session']
+            )
+            
+            # Save to database
+            pair_id = await self.database.add_pair(pair)
+            
+            if pair_id:
+                success_message = (
+                    "🎉 **Forwarding Pair Created Successfully!**\n\n"
+                    f"**Pair ID:** {pair_id}\n"
+                    f"**Name:** {user_data['name']}\n"
+                    f"**Source:** `{user_data['source_chat']}`\n"
+                    f"**Destination:** `{user_data['dest_chat']}`\n"
+                    f"**Session:** {user_data['session']}\n"
+                    f"**Bot:** {selected_bot['name']} (@{selected_bot['username']})\n\n"
+                )
+                
+                if test_result['valid']:
+                    success_message += "✅ Test message sent successfully!\n"
+                
+                success_message += "The pair is now active and ready for forwarding."
+                
+                await update.message.reply_text(success_message, parse_mode='Markdown')
+            else:
+                await update.message.reply_text("❌ Failed to create forwarding pair in database.")
+            
+        except Exception as e:
+            logger.error(f"Error creating pair from wizard: {e}")
+            await update.message.reply_text(f"❌ Error creating pair: {e}")
+        finally:
+            user_data.clear()
