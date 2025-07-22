@@ -13,20 +13,24 @@ from core.session_manager import SessionManager
 from core.advanced_session_manager import AdvancedSessionManager
 from admin_bot.commands import AdminCommands
 from admin_bot.unified_session_commands import UnifiedSessionCommands
+from admin_bot.enhanced_commands import EnhancedAdminCommands
+from utils.encryption import EncryptionManager
 
 
 class AdminHandler:
     """Main admin bot handler."""
     
-    def __init__(self, bot_token: str, database: Database, session_manager: SessionManager, admin_user_ids: List[int], advanced_session_manager: Optional[AdvancedSessionManager] = None):
+    def __init__(self, bot_token: str, database: Database, session_manager: SessionManager, admin_user_ids: List[int], advanced_session_manager: Optional[AdvancedSessionManager] = None, encryption_key: str = ""):
         self.bot_token = bot_token
         self.database = database
         self.session_manager = session_manager
         self.advanced_session_manager = advanced_session_manager
         self.admin_user_ids = set(admin_user_ids)
+        self.encryption_manager = EncryptionManager(encryption_key)
         self.application: Optional[Application] = None
         self.commands: Optional[AdminCommands] = None
         self.unified_commands: Optional[UnifiedSessionCommands] = None
+        self.enhanced_commands: Optional[EnhancedAdminCommands] = None
         self.running = False
     
     async def start(self):
@@ -40,6 +44,7 @@ class AdminHandler:
             
             # Initialize commands handlers
             self.commands = AdminCommands(self.database, self.session_manager)
+            self.enhanced_commands = EnhancedAdminCommands(self.database, self.session_manager, self.encryption_manager)
             if self.advanced_session_manager:
                 self.unified_commands = UnifiedSessionCommands(self.database, self.advanced_session_manager)
             
@@ -95,13 +100,15 @@ class AdminHandler:
         command_handlers = [
             ("start", self.commands.start_command),
             ("help", self.commands.help_command),
-            ("addpair", self.commands.addpair_command),
+            ("addpair", self.enhanced_commands.addpair_enhanced_command),  # Use enhanced version
             ("listpairs", self.commands.listpairs_command),
             ("removepair", self.commands.removepair_command),
             ("status", self.commands.status_command),
             ("sessions", self.commands.sessions_command),
             ("changesession", self.commands.changesession_command),
             ("blockword", self.commands.blockword_command),
+            ("validatebot", self.enhanced_commands.validate_bot_command),  # New command
+            ("updatebottoken", self.enhanced_commands.update_bot_token_command),  # New command
         ]
         
         # Add unified session management command

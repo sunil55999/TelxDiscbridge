@@ -4,7 +4,7 @@
 
 This is a complete Python-based message forwarding bot that creates a bridge between Telegram and Discord platforms. The system receives messages from Telegram source chats (via user sessions), relays them through Discord channels, and then forwards them to Telegram destination chats. The bot operates on a pair-based routing system where each forwarding pair defines a unique connection between a Telegram source, Discord channel, and Telegram destination.
 
-**Current Status:** Successfully migrated to Replit environment and fully operational. All dependencies installed, workflow running correctly, and security validation working. Ready for API credential configuration and feature development.
+**Current Status:** Successfully migrated to Replit environment with comprehensive per-pair bot token architecture implemented. All dependencies installed, workflow running correctly, and enhanced security with per-pair bot token validation and encryption. Ready for API credential configuration and production deployment.
 
 ## User Preferences
 
@@ -22,17 +22,21 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 - ✓ Session authentication and removal functionality
 
 ### 2. Admin Bot and Pair Management  
-- ✓ Complete setup via Telegram bot commands (no external UI)
-- ✓ Admin user ID authorization and privilege control
-- ✓ Secure handling of bot tokens (never exposed in logs)
-- ✓ Add/edit/remove/list pairs with unique identifiers
-- ✓ Required parameters: session, Discord webhook, destination channel, bot token
+- ✅ **IMPLEMENTED** Complete setup via Telegram bot commands (no external UI)
+- ✅ **IMPLEMENTED** Admin user ID authorization and privilege control
+- ✅ **IMPLEMENTED** Secure handling of bot tokens (never exposed in logs)
+- ✅ **IMPLEMENTED** Add/edit/remove/list pairs with unique identifiers
+- ✅ **IMPLEMENTED** Required parameters: session, Discord webhook, destination channel, bot token
+- ✅ **IMPLEMENTED** Interactive pair creation wizard with step-by-step validation
+- ✅ **IMPLEMENTED** Enhanced commands: /validatebot, /updatebottoken
 
 ### 3. Bot Tokens and Destination Posting
-- ✓ Token validation using Bot API (getMe) 
-- ✓ Channel posting permission verification
-- ✓ Encrypted token storage with secure removal
-- ✓ Per-pair bot token assignment for destinations
+- ✅ **IMPLEMENTED** Token validation using Bot API (getMe) 
+- ✅ **IMPLEMENTED** Channel posting permission verification
+- ✅ **IMPLEMENTED** Encrypted token storage with secure removal
+- ✅ **IMPLEMENTED** Per-pair bot token assignment for destinations
+- ✅ **IMPLEMENTED** Test message validation before pair creation
+- ✅ **IMPLEMENTED** Interactive bot token validation workflow
 
 ### 4. Message Forwarding Flow
 - ✓ Reliable Telegram→Discord→Telegram message relay
@@ -70,6 +74,21 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 - ✓ Error scenario guidance and troubleshooting
 
 ## Recent Changes
+
+**July 22, 2025 - Per-Pair Bot Token Architecture Implemented**
+✓ Comprehensive refactoring to use dedicated bot tokens per forwarding pair
+✓ Enhanced database schema with encrypted bot token storage per pair
+✓ Implemented BotTokenValidator for token validation and permission checking
+✓ Created PerPairBotManager for individual bot instance management
+✓ Refactored TelegramDestination to use per-pair bot tokens instead of global bot
+✓ Added comprehensive bot token validation (getMe, chat permissions, test messages)
+✓ Enhanced admin commands with interactive pair creation wizard
+✓ Integrated encrypted token storage with automatic security validation
+✓ Added new admin commands: /validatebot, /updatebottoken with full validation
+✓ Implemented per-pair message posting, editing, and deletion with proper bot usage
+✓ Added Discord webhook URL support alongside per-pair bot token configuration
+✓ Enhanced security with no token exposure in logs or admin messages
+✓ Automatic bot instance caching and cleanup for optimal performance
 
 **July 22, 2025 - Replit Environment Migration Completed**
 ✓ Successfully migrated from Replit Agent to Replit environment

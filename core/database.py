@@ -24,6 +24,8 @@ class ForwardingPair:
     telegram_source_chat_id: int = 0
     discord_channel_id: int = 0
     telegram_dest_chat_id: int = 0
+    telegram_bot_token_encrypted: str = ""  # Encrypted bot token for destination
+    discord_webhook_url: str = ""  # Discord webhook URL for posting
     session_name: str = ""
     session_id: Optional[int] = None  # Reference to session ID
     is_active: bool = True
@@ -79,6 +81,8 @@ class ForwardingPairModel(Base):
     telegram_source_chat_id = Column(String(50), nullable=False)
     discord_channel_id = Column(String(50), nullable=False)
     telegram_dest_chat_id = Column(String(50), nullable=False)
+    telegram_bot_token_encrypted = Column(Text, nullable=False)  # Encrypted bot token
+    discord_webhook_url = Column(Text, nullable=False)  # Discord webhook URL
     session_name = Column(String(100), nullable=False)
     session_id = Column(Integer, nullable=True)  # Foreign key to sessions
     is_active = Column(Boolean, default=True)
@@ -168,6 +172,8 @@ class Database:
                     telegram_source_chat_id=str(pair.telegram_source_chat_id),
                     discord_channel_id=str(pair.discord_channel_id),
                     telegram_dest_chat_id=str(pair.telegram_dest_chat_id),
+                    telegram_bot_token_encrypted=pair.telegram_bot_token_encrypted,
+                    discord_webhook_url=pair.discord_webhook_url,
                     session_name=pair.session_name,
                     session_id=pair.session_id,
                     is_active=pair.is_active,
@@ -202,6 +208,8 @@ class Database:
                         telegram_source_chat_id=int(result.telegram_source_chat_id),
                         discord_channel_id=int(result.discord_channel_id),
                         telegram_dest_chat_id=int(result.telegram_dest_chat_id),
+                        telegram_bot_token_encrypted=result.telegram_bot_token_encrypted,
+                        discord_webhook_url=result.discord_webhook_url,
                         session_name=result.session_name,
                         is_active=result.is_active,
                         keyword_filters=result.keyword_filters or [],
@@ -234,6 +242,8 @@ class Database:
                         telegram_source_chat_id=int(row.telegram_source_chat_id),
                         discord_channel_id=int(row.discord_channel_id),
                         telegram_dest_chat_id=int(row.telegram_dest_chat_id),
+                        telegram_bot_token_encrypted=row.telegram_bot_token_encrypted or "",
+                        discord_webhook_url=row.discord_webhook_url or "",
                         session_name=row.session_name,
                         is_active=bool(row.is_active),
                         keyword_filters=json.loads(row.keyword_filters) if row.keyword_filters else [],
@@ -260,6 +270,8 @@ class Database:
                 result.telegram_source_chat_id = str(pair.telegram_source_chat_id)
                 result.discord_channel_id = str(pair.discord_channel_id)
                 result.telegram_dest_chat_id = str(pair.telegram_dest_chat_id)
+                result.telegram_bot_token_encrypted = pair.telegram_bot_token_encrypted
+                result.discord_webhook_url = pair.discord_webhook_url
                 result.session_name = pair.session_name
                 result.session_id = pair.session_id
                 result.is_active = pair.is_active

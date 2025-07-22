@@ -63,9 +63,11 @@ class ForwardingBot:
         # Initialize Telegram source client
         self.telegram_source = TelegramSource(self.session_manager, self.database)
         
-        # Initialize Telegram destination bot
+        # Initialize Telegram destination service (uses per-pair bot tokens)
+        from utils.encryption import EncryptionManager
+        encryption_manager = EncryptionManager(self.settings.encryption_key)
         self.telegram_destination = TelegramDestination(
-            self.settings.telegram_bot_token, self.database
+            self.database, encryption_manager
         )
         
         # Initialize Discord relay
@@ -79,7 +81,8 @@ class ForwardingBot:
             self.database,
             self.session_manager,
             self.settings.admin_user_ids,
-            self.advanced_session_manager
+            self.advanced_session_manager,
+            self.settings.encryption_key
         )
         
         logger.info("All components initialized successfully")
