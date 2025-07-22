@@ -414,10 +414,10 @@ class UnifiedAdminCommands:
                     'deleted': '🗑️'
                 }.get(session.health_status, '❓')
                 
-                message += f"**{session.session_name}**\n"
+                message += f"**{session.name}**\n"
                 message += f"{status_emoji} Status: {session.health_status}\n"
                 message += f"📱 Phone: {session.phone_number or 'Unknown'}\n"
-                message += f"👤 User: {session.user_id or 'Not set'}\n"
+                message += f"👤 Pairs: {session.pair_count}\n"
                 
                 if session.last_verified:
                     try:
@@ -736,7 +736,7 @@ class UnifiedAdminCommands:
                     user_data.clear()
                     return True
                 
-                session_list = "\n".join([f"• {s.session_name}" for s in sessions])
+                session_list = "\n".join([f"• {s.name}" for s in sessions])
                 user_data['step'] = 'session'
                 await update.message.reply_text(
                     f"**Step 5/6:** Choose a Telegram session:\n\n"
@@ -749,7 +749,7 @@ class UnifiedAdminCommands:
             elif step == 'session':
                 # Validate session exists
                 sessions = await self.database.get_all_sessions()
-                valid_sessions = [s.session_name for s in sessions]
+                valid_sessions = [s.name for s in sessions]
                 
                 if text not in valid_sessions:
                     await update.message.reply_text(
