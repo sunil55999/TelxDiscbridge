@@ -241,3 +241,52 @@ class FilterCommands:
         except Exception as e:
             logger.error(f"Error in testfilter command: {e}")
             await update.message.reply_text(f"❌ Error: {e}")
+    
+    # Quick filter commands for common operations
+    async def block_images_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to block image messages."""
+        try:
+            success = await self.message_filter.update_global_settings({'filter_images': True})
+            if success:
+                await update.message.reply_text("✅ Image messages are now blocked globally.")
+            else:
+                await update.message.reply_text("❌ Failed to update image filtering setting.")
+        except Exception as e:
+            logger.error(f"Error in block_images command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def allow_images_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to allow image messages."""
+        try:
+            success = await self.message_filter.update_global_settings({'filter_images': False})
+            if success:
+                await update.message.reply_text("✅ Image messages are now allowed globally.")
+            else:
+                await update.message.reply_text("❌ Failed to update image filtering setting.")
+        except Exception as e:
+            logger.error(f"Error in allow_images command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def strip_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to enable header/footer stripping."""
+        try:
+            success = await self.message_filter.update_global_settings({'strip_headers': True})
+            if success:
+                await update.message.reply_text("✅ Message headers and footers will now be stripped.")
+            else:
+                await update.message.reply_text("❌ Failed to update header stripping setting.")
+        except Exception as e:
+            logger.error(f"Error in strip_headers command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def keep_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to disable header/footer stripping."""
+        try:
+            success = await self.message_filter.update_global_settings({'strip_headers': False})
+            if success:
+                await update.message.reply_text("✅ Message headers and footers will now be kept.")
+            else:
+                await update.message.reply_text("❌ Failed to update header stripping setting.")
+        except Exception as e:
+            logger.error(f"Error in keep_headers command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")

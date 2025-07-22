@@ -340,6 +340,13 @@ class AdminCommands:
         
         data = query.data
         
+        # Handle help callbacks
+        if data.startswith("help:"):
+            from admin_bot.comprehensive_help import ComprehensiveHelp
+            await ComprehensiveHelp.handle_help_callback(update, context)
+            return
+        
+        # Handle pair removal callbacks
         if data.startswith("remove_pair_"):
             pair_id = int(data.split("_")[-1])
             

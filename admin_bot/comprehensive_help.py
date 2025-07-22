@@ -36,6 +36,12 @@ class ComprehensiveHelp:
 /blockword <word> - Add word to global filter
 /unblockword <word> - Remove word from filter
 /showfilters - Show current filters
+/filterconfig - Configure media/header/mention filtering
+
+**Quick Filter Commands:**
+• `/filterconfig images on/off` - Block image messages
+• `/filterconfig headers on/off` - Remove message headers/footers  
+• `/filterconfig mentions on/off` - Strip @mentions
 
 📊 **MONITORING**
 /logs - Show recent error logs
@@ -288,3 +294,110 @@ Or type `/help <command>` for specific command help."""
                 reply_markup=reply_markup, 
                 parse_mode='Markdown'
             )
+
+    @staticmethod
+    async def handle_help_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle help menu callback queries."""
+        query = update.callback_query
+        data = query.data
+        
+        if data == "help:pairs":
+            message = """🔧 **Pair Management Commands**
+
+**Core Commands:**
+• `/addpair` - Create new forwarding pair (interactive wizard)
+• `/listpairs` - List all active forwarding pairs  
+• `/removepair <id>` - Remove forwarding pair
+• `/validatebot <id>` - Validate bot token for pair
+• `/updatebottoken <id> <token>` - Update bot token
+
+**Features:**
+✅ Per-pair dedicated bot tokens
+✅ Interactive creation wizard
+✅ Comprehensive validation
+✅ Encrypted token storage
+
+Back to main menu: /help"""
+            
+        elif data == "help:sessions":
+            message = """👥 **Session Management Commands**
+
+**Core Commands:**
+• `/addsession` - Add new Telegram user session
+• `/sessions` - List all sessions with health status
+• `/changesession <pair_id> <session>` - Change session for pair
+
+**Features:**
+🔐 Encrypted session storage
+📱 OTP-based authentication
+⚡ Health monitoring every 5 minutes
+🔄 Session reassignment support
+
+Back to main menu: /help"""
+            
+        elif data == "help:security":
+            message = """🛡️ **Security & Filtering Commands**
+
+**Filtering Commands:**
+• `/filterconfig images on/off` - Block/allow image messages
+• `/filterconfig videos on/off` - Block/allow video messages  
+• `/filterconfig documents on/off` - Block/allow document messages
+• `/filterconfig headers on/off` - Strip message headers/footers
+• `/filterconfig mentions on/off` - Strip @mentions from messages
+• `/filterconfig maxlength <number>` - Set maximum message length
+
+**Word Filtering:**
+• `/blockword <word>` - Add word to global filter
+• `/unblockword <word>` - Remove word from filter
+• `/showfilters` - Show current filter settings
+
+**Security Features:**
+🔒 All bot tokens encrypted
+🚫 Tokens never exposed in logs
+✅ Multi-step validation
+
+Back to main menu: /help"""
+            
+        elif data == "help:monitoring":
+            message = """📊 **Monitoring & Health Commands**
+
+**System Commands:**
+• `/status` - Complete system status and statistics
+• `/health` - System health check
+• `/logs` - Show recent error logs
+• `/alerts` - View system alerts
+
+**Validation Commands:**
+• `/validatebot <id>` - Validate specific pair bot
+• `/testfilter <text>` - Test message against filters
+
+**Information Displayed:**
+📈 Forwarding statistics
+🤖 Bot health status
+💾 Database connection
+👥 Session health
+🔧 System resources
+
+Back to main menu: /help"""
+            
+        elif data == "help:setup":
+            message = ComprehensiveHelp.get_setup_guide()
+            
+        elif data == "help:commands":
+            message = ComprehensiveHelp.get_main_help()
+            
+        else:
+            # Return to main menu
+            await ComprehensiveHelp.show_help_menu(update, context)
+            return
+        
+        # Create back button
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+        keyboard = [[InlineKeyboardButton("🔙 Back to Help Menu", callback_data="help:main")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(
+            message,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )

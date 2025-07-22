@@ -85,6 +85,11 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 ✓ Successfully resolved all startup failures - application now runs without errors
 ✓ All components (session manager, Telegram source/destination, Discord relay, admin bot) starting correctly
 ✓ Admin bot now fully responsive and accepting commands via Telegram
+✓ Fixed help button callbacks - interactive help menu now working properly
+✓ Added prominent image blocking commands (/blockimages, /allowimages)
+✓ Added quick header/footer removal commands (/stripheaders, /keepheaders) 
+✓ Enhanced help system with detailed filtering and security command documentation
+✓ Updated command visibility in help menu for better user experience
 
 **July 22, 2025 - Per-Pair Bot Token Architecture Implemented**
 ✓ Comprehensive refactoring to use dedicated bot tokens per forwarding pair

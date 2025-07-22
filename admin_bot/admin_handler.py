@@ -142,6 +142,11 @@ class AdminHandler:
             ("showfilters", self.filter_commands.showfilters_command),
             ("filterconfig", self.filter_commands.filterconfig_command),
             ("testfilter", self.filter_commands.testfilter_command),
+            # Quick filter shortcuts
+            ("blockimages", self.filter_commands.block_images_command),
+            ("allowimages", self.filter_commands.allow_images_command),
+            ("stripheaders", self.filter_commands.strip_headers_command),
+            ("keepheaders", self.filter_commands.keep_headers_command),
             # Bot token management
             ("validatebot", self.enhanced_commands.validate_bot_command),
             ("updatebottoken", self.enhanced_commands.update_bot_token_command),
