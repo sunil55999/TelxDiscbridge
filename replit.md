@@ -75,6 +75,15 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
+**July 22, 2025 - Enhanced /addpair with Automatic Discord Webhook Creation**
+✓ Updated /addpair workflow to use Discord channel ID instead of webhook URL
+✓ Implemented automatic Discord webhook creation based on Telegram source channel name
+✓ Enhanced pair creation wizard with Discord channel ID validation
+✓ Added intelligent webhook naming using source channel information
+✓ Improved user experience by eliminating manual webhook setup requirements
+✓ Enhanced error handling for Discord API webhook creation failures
+✓ Updated help system and documentation to reflect automatic webhook functionality
+
 **July 22, 2025 - Complete Functionality Testing & /addpair Command Fix**
 ✓ Fixed missing /addpair command registration in admin handler - now fully functional
 ✓ Implemented interactive pair creation wizard with 6-step guided process

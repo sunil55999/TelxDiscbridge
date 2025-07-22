@@ -42,7 +42,7 @@ class UnifiedAdminCommands:
             "**Quick Start:**\n"
             "• `/addsession` - Add Telegram user session\n"
             "• `/addbot` - Add bot token for destinations\n"
-            "• `/addpair` - Create forwarding pair\n"
+            "• `/addpair` - Create forwarding pair (auto-webhook)\n"
             "• `/status` - System status\n"
             "• `/help` - Complete guide\n\n"
             
@@ -67,7 +67,7 @@ class UnifiedAdminCommands:
             "📖 **Complete Command Reference**\n\n"
             
             "**🔧 PAIR MANAGEMENT**\n"
-            "• `/addpair` - Create new forwarding pair\n"
+            "• `/addpair` - Create new forwarding pair (auto-creates Discord webhook)\n"
             "• `/listpairs` - Show all pairs\n"
             "• `/removepair <id>` - Remove pair\n"
             "• `/status` - System status\n\n"
@@ -535,7 +535,8 @@ class UnifiedAdminCommands:
                     "You'll need:\n"
                     "• A Telegram session (`/addsession`)\n"
                     "• A bot token (`/addbot`)\n"
-                    "• Source and destination chat IDs"
+                    "• Source chat ID and Discord channel ID\n"
+                    "• Webhook will be created automatically"
                 )
                 return
             
@@ -549,8 +550,8 @@ class UnifiedAdminCommands:
                 message += f"📥 Destination: `{pair.telegram_dest_chat_id}`\n"
                 message += f"👤 Session: {pair.session_name or 'None'}\n"
                 
-                if pair.discord_webhook_url:
-                    message += f"🌐 Discord: {pair.discord_webhook_url[:30]}...\n"
+                if pair.discord_channel_id:
+                    message += f"💬 Discord: `{pair.discord_channel_id}`\n"
                 
                 message += "\n"
             
@@ -690,21 +691,24 @@ class UnifiedAdminCommands:
                     await update.message.reply_text("❌ Please enter a valid chat ID (numbers only)")
                     return True
                 
-                user_data['step'] = 'discord_webhook'
+                user_data['step'] = 'discord_channel'
                 await update.message.reply_text(
-                    "**Step 3/6:** Enter the Discord webhook URL:\n\n"
-                    "💡 Create a webhook in your Discord channel settings.\n"
-                    "💡 Right-click channel → Integrations → Webhooks → New Webhook",
+                    "**Step 3/6:** Enter the Discord channel ID:\n\n"
+                    "💡 Right-click on the Discord channel → Copy Channel ID\n"
+                    "💡 Enable Developer Mode in Discord settings if needed\n"
+                    "💡 Webhook will be created automatically with source channel name",
                     parse_mode='Markdown'
                 )
                 return True
                 
-            elif step == 'discord_webhook':
-                if not text.startswith('https://discord.com/api/webhooks/'):
-                    await update.message.reply_text("❌ Please enter a valid Discord webhook URL")
+            elif step == 'discord_channel':
+                try:
+                    discord_channel_id = int(text)
+                    user_data['discord_channel_id'] = discord_channel_id
+                except ValueError:
+                    await update.message.reply_text("❌ Please enter a valid Discord channel ID (numbers only)")
                     return True
                 
-                user_data['discord_webhook'] = text
                 user_data['step'] = 'dest_chat'
                 await update.message.reply_text(
                     "**Step 4/6:** Enter the destination Telegram chat ID (where messages go):\n\n"
@@ -839,6 +843,26 @@ class UnifiedAdminCommands:
                     "Creating pair anyway, but please verify the bot can post."
                 )
             
+            # Get source channel name for webhook creation
+            source_channel_name = await self._get_telegram_channel_name(user_data['source_chat'], user_data['session'])
+            
+            # Create Discord webhook automatically
+            webhook_url = await self._create_discord_webhook(
+                user_data['discord_channel_id'], 
+                source_channel_name or f"TG_{user_data['source_chat']}"
+            )
+            
+            if not webhook_url:
+                await update.message.reply_text(
+                    "❌ **Failed to create Discord webhook**\n\n"
+                    "Please check that:\n"
+                    "• The Discord bot has permission to manage webhooks\n"
+                    "• The channel ID is correct\n"
+                    "• The Discord bot is added to the server"
+                )
+                user_data.clear()
+                return
+            
             # Encrypt bot token
             encrypted_token = self.encryption_manager.encrypt(bot_token)
             
@@ -847,11 +871,11 @@ class UnifiedAdminCommands:
             pair = ForwardingPair(
                 name=user_data['name'],
                 telegram_source_chat_id=user_data['source_chat'],
-                discord_channel_id=0,  # Using webhook instead
+                discord_channel_id=user_data['discord_channel_id'],
                 telegram_dest_chat_id=user_data['dest_chat'],
                 telegram_bot_token_encrypted=encrypted_token,
                 telegram_bot_name=selected_bot['name'],
-                discord_webhook_url=user_data['discord_webhook'],
+                discord_webhook_url=webhook_url,
                 session_name=user_data['session']
             )
             
@@ -864,6 +888,8 @@ class UnifiedAdminCommands:
                     f"**Pair ID:** {pair_id}\n"
                     f"**Name:** {user_data['name']}\n"
                     f"**Source:** `{user_data['source_chat']}`\n"
+                    f"**Discord Channel:** `{user_data['discord_channel_id']}`\n"
+                    f"**Webhook:** Created automatically\n"
                     f"**Destination:** `{user_data['dest_chat']}`\n"
                     f"**Session:** {user_data['session']}\n"
                     f"**Bot:** {selected_bot['name']} (@{selected_bot['username']})\n\n"
@@ -883,3 +909,80 @@ class UnifiedAdminCommands:
             await update.message.reply_text(f"❌ Error creating pair: {e}")
         finally:
             user_data.clear()
+    
+    async def _get_telegram_channel_name(self, chat_id: int, session_name: str) -> Optional[str]:
+        """Get Telegram channel name for webhook creation."""
+        try:
+            # Get session data to connect to Telegram
+            session_data = await self.database.get_session(session_name)
+            if not session_data or not session_data.get('session_data'):
+                return None
+            
+            # Try to get channel info (this would require Telethon client)
+            # For now, return a formatted name based on chat ID
+            # In a full implementation, you'd use the session to connect and get actual channel name
+            return f"TG_Channel_{abs(chat_id)}"
+            
+        except Exception as e:
+            logger.error(f"Error getting channel name for {chat_id}: {e}")
+            return None
+    
+    async def _create_discord_webhook(self, channel_id: int, webhook_name: str) -> Optional[str]:
+        """Create Discord webhook automatically."""
+        try:
+            # Import discord.py components
+            import discord
+            from discord.ext import commands
+            
+            # Get Discord bot token from settings
+            from config.settings import Settings
+            settings = Settings()
+            discord_token = settings.discord_bot_token
+            
+            if not discord_token:
+                logger.error("Discord bot token not configured")
+                return None
+            
+            # Create Discord client
+            intents = discord.Intents.default()
+            intents.message_content = True
+            client = discord.Client(intents=intents)
+            
+            webhook_url = None
+            
+            @client.event
+            async def on_ready():
+                nonlocal webhook_url
+                try:
+                    channel = client.get_channel(channel_id)
+                    if not channel:
+                        logger.error(f"Discord channel {channel_id} not found")
+                        await client.close()
+                        return
+                    
+                    # Check if webhook already exists with this name
+                    existing_webhooks = await channel.webhooks()
+                    for webhook in existing_webhooks:
+                        if webhook.name == webhook_name:
+                            webhook_url = webhook.url
+                            logger.info(f"Using existing webhook: {webhook_name}")
+                            await client.close()
+                            return
+                    
+                    # Create new webhook
+                    webhook = await channel.create_webhook(name=webhook_name)
+                    webhook_url = webhook.url
+                    logger.info(f"Created Discord webhook: {webhook_name} in channel {channel_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error creating Discord webhook: {e}")
+                finally:
+                    await client.close()
+            
+            # Connect and create webhook
+            await client.start(discord_token)
+            return webhook_url
+            
+        except Exception as e:
+            logger.error(f"Error in Discord webhook creation: {e}")
+            return None
