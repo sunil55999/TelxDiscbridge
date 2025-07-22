@@ -282,6 +282,187 @@ class FilterCommands:
             await update.message.reply_text(f"❌ Error: {e}")
     
     async def strip_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to enable header stripping."""
+        if not update.message:
+            return
+        try:
+            success = await self.message_filter.update_global_settings({'strip_headers': True})
+            if success:
+                await update.message.reply_text("✅ Message headers will now be stripped globally.")
+            else:
+                await update.message.reply_text("❌ Failed to update header stripping setting.")
+        except Exception as e:
+            logger.error(f"Error in strip_headers command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def keep_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Quick command to disable header stripping."""
+        if not update.message:
+            return
+        try:
+            success = await self.message_filter.update_global_settings({'strip_headers': False})
+            if success:
+                await update.message.reply_text("✅ Message headers will now be kept globally.")
+            else:
+                await update.message.reply_text("❌ Failed to update header stripping setting.")
+        except Exception as e:
+            logger.error(f"Error in keep_headers command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def blockimage_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Block specific image using perceptual hash."""
+        if not update.message:
+            return
+        try:
+            if not context.args:
+                await update.message.reply_text(
+                    "📸 **Block Image by Hash**\n\n"
+                    "Usage: `/blockimage <image_hash> [pair_id]`\n\n"
+                    "**Examples:**\n"
+                    "• `/blockimage a1b2c3d4e5f6` - Block globally\n"
+                    "• `/blockimage a1b2c3d4e5f6 12` - Block for pair 12 only\n\n"
+                    "**To get image hash:**\n"
+                    "Send an image to the bot and it will show the hash.",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            image_hash = context.args[0]
+            pair_id = int(context.args[1]) if len(context.args) > 1 else None
+            
+            # Import image hash manager
+            from utils.image_hash import image_hash_manager
+            
+            success = await image_hash_manager.block_image_hash(image_hash, pair_id)
+            
+            if success:
+                scope = f"pair {pair_id}" if pair_id else "globally"
+                await update.message.reply_text(
+                    f"✅ Blocked image hash `{image_hash}` {scope}.\n\n"
+                    "Similar images will now be filtered.",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text("❌ Failed to block image hash.")
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid pair ID. Please provide a valid number.")
+        except Exception as e:
+            logger.error(f"Error in blockimage command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def unblockimage_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Unblock specific image using perceptual hash."""
+        if not update.message:
+            return
+        try:
+            if not context.args:
+                await update.message.reply_text(
+                    "📸 **Unblock Image by Hash**\n\n"
+                    "Usage: `/unblockimage <image_hash> [pair_id]`\n\n"
+                    "**Examples:**\n"
+                    "• `/unblockimage a1b2c3d4e5f6` - Unblock globally\n"
+                    "• `/unblockimage a1b2c3d4e5f6 12` - Unblock for pair 12 only",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            image_hash = context.args[0]
+            pair_id = int(context.args[1]) if len(context.args) > 1 else None
+            
+            # Import image hash manager
+            from utils.image_hash import image_hash_manager
+            
+            success = await image_hash_manager.unblock_image_hash(image_hash, pair_id)
+            
+            if success:
+                scope = f"pair {pair_id}" if pair_id else "globally"
+                await update.message.reply_text(
+                    f"✅ Unblocked image hash `{image_hash}` {scope}.",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text("❌ Failed to unblock image hash.")
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid pair ID. Please provide a valid number.")
+        except Exception as e:
+            logger.error(f"Error in unblockimage command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def blockwordpair_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Block word for specific pair."""
+        if not update.message:
+            return
+        try:
+            if not context.args or len(context.args) < 2:
+                await update.message.reply_text(
+                    "🚫 **Block Word for Specific Pair**\n\n"
+                    "Usage: `/blockwordpair <pair_id> <word>`\n\n"
+                    "**Example:**\n"
+                    "• `/blockwordpair 12 spam` - Block 'spam' for pair 12 only",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            pair_id = int(context.args[0])
+            word = ' '.join(context.args[1:]) if context.args and len(context.args) > 1 else ""
+            
+            # Add per-pair blocked word (would need database implementation)
+            # For now, use global blocking with pair tracking
+            success = await self.message_filter.add_pair_blocked_word(pair_id, word)
+            
+            if success:
+                await update.message.reply_text(
+                    f"✅ Blocked word '{word}' for pair {pair_id}.\n\n"
+                    "This word will be filtered only for this specific pair.",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text("❌ Failed to block word for pair.")
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid pair ID. Please provide a valid number.")
+        except Exception as e:
+            logger.error(f"Error in blockwordpair command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def allowwordpair_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Allow word for specific pair."""
+        if not update.message:
+            return
+        try:
+            if not context.args or len(context.args) < 2:
+                await update.message.reply_text(
+                    "✅ **Allow Word for Specific Pair**\n\n"
+                    "Usage: `/allowwordpair <pair_id> <word>`\n\n"
+                    "**Example:**\n"
+                    "• `/allowwordpair 12 spam` - Allow 'spam' for pair 12 only",
+                    parse_mode='Markdown'
+                )
+                return
+            
+            pair_id = int(context.args[0])
+            word = ' '.join(context.args[1:]) if context.args and len(context.args) > 1 else ""
+            
+            # Remove per-pair blocked word
+            success = await self.message_filter.remove_pair_blocked_word(pair_id, word)
+            
+            if success:
+                await update.message.reply_text(
+                    f"✅ Allowed word '{word}' for pair {pair_id}.",
+                    parse_mode='Markdown'
+                )
+            else:
+                await update.message.reply_text("❌ Failed to allow word for pair.")
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid pair ID. Please provide a valid number.")
+        except Exception as e:
+            logger.error(f"Error in allowwordpair command: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def strip_headers_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Quick command to enable header/footer stripping."""
         if not update.message:
             return

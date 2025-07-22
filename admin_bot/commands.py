@@ -71,7 +71,11 @@ class AdminCommands:
             "• `/blockword [word]` - Add word to global filter\n"
             "• `/unblockword [word]` - Remove word from filter\n"
             "• `/showfilters` - Show current filter settings\n"
-            "• `/blockimages` / `/allowimages` - Quick toggles\n\n"
+            "• `/blockimages` / `/allowimages` - Quick image toggles\n"
+            "• `/stripheaders` / `/keepheaders` - Remove/keep headers\n"
+            "• `/blockimage [hash] [pair_id]` - Block specific image\n"
+            "• `/blockwordpair [pair_id] [word]` - Block word for pair\n"
+            "• `/filterconfig` - Advanced filter settings\n\n"
             
             "Use commands without parameters for interactive mode.\n\n"
             
@@ -252,7 +256,7 @@ class AdminCommands:
                     'unknown': '🔵'
                 }.get(session.health_status, '❓')
                 
-                sessions_message += f"**{session.name}** {status_emoji}\n"
+                sessions_message += f"🏷️ {session.name} {status_emoji}\n"
                 sessions_message += f"📱 Phone: {session.phone_number or 'Not set'}\n"
                 sessions_message += f"👥 Pairs: {session.pair_count}/{session.max_pairs}\n"
                 sessions_message += f"⚡ Health: {session.health_status.title()}\n"
@@ -273,9 +277,9 @@ class AdminCommands:
                 sessions_message += f"🔧 Worker: {session.worker_id or 'None'}\n\n"
             
             sessions_message += "**Management Commands:**\n"
-            sessions_message += "• `/addsession` - Add new session\n"
-            sessions_message += "• `/changesession <pair_id> <session>` - Change pair session\n"
-            sessions_message += "• `/health` - Check all session health"
+            sessions_message += "• /addsession - Add new session\n"
+            sessions_message += "• /changesession \\<pair\\_id\\> \\<session\\> - Change pair session\n"
+            sessions_message += "• /health - Check all session health"
             
             await update.message.reply_text(sessions_message, parse_mode='Markdown')
             
@@ -290,8 +294,8 @@ class AdminCommands:
         try:
             if not context.args or len(context.args) < 2:
                 await update.message.reply_text(
-                    "❓ Usage: `/changesession [pair_id] [session_name]`",
-                    parse_mode='Markdown'
+                    "❓ Usage: /changesession \\[pair\\_id\\] \\[session\\_name\\]",
+                    parse_mode='MarkdownV2'
                 )
                 return
             

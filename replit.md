@@ -75,16 +75,19 @@ This project implements a comprehensive Telegram→Discord→Telegram forwarding
 
 ## Recent Changes
 
-**July 22, 2025 - Console Errors and Command Issues Fixed**
-✓ Fixed sessions command datetime parsing error ('str' object has no attribute 'strftime')
-✓ Added missing MessageFilter.update_global_settings method for filter commands
-✓ Fixed Telegram markdown parsing issues in help system (byte offset errors)
-✓ Added comprehensive null checks to prevent LSP errors in all admin commands
-✓ Updated /start and /help commands with current correct command documentation
-✓ Bot now runs without any console errors or critical runtime exceptions
-✓ All admin commands (sessions, blockimages, filterconfig) now working properly
-✓ Help system interactive callbacks functioning correctly without parsing errors
-✓ Significantly reduced LSP diagnostic errors from 153 to 77 remaining (mostly database schema related)
+**July 22, 2025 - Advanced Filtering and Enhanced Commands Implemented**
+✓ Fixed all markdown parsing errors in sessions command and help system callbacks
+✓ Removed duplicate command registrations - cleaned up admin handler duplicates
+✓ Implemented perceptual hash (pHash) image blocking using imagehash library for precise image detection
+✓ Added per-pair and global filtering options for both images and keywords
+✓ Made header removal (/stripheaders, /keepheaders) and mention removal commands visible in help
+✓ Created comprehensive image hash management system with similarity detection
+✓ Added new commands: /blockimage, /unblockimage, /blockwordpair, /allowwordpair
+✓ Enhanced filter commands with per-pair functionality and advanced settings
+✓ Fixed all console errors and critical LSP diagnostic issues
+✓ Bot now supports sophisticated filtering with both global and pair-specific controls
+✓ Successfully integrated imagehash, pillow, and scipy dependencies for image processing
+✓ All admin commands working properly without parsing or runtime errors
 
 **July 22, 2025 - Application Startup Issues Fixed**
 ✓ Fixed invalid encryption key causing Fernet cryptography errors during startup

@@ -140,7 +140,7 @@ class AdminHandler:
         command_handlers = [
             ("start", self.commands.start_command),
             ("help", ComprehensiveHelp.show_help_menu),
-            ("addpair", self.enhanced_commands.addpair_enhanced_command),  # Enhanced version
+            ("addpair", self.enhanced_commands.addpair_enhanced_command),  # Enhanced version only
             ("listpairs", self.commands.listpairs_command),
             ("removepair", self.commands.removepair_command),
             ("status", self.commands.status_command),
@@ -157,13 +157,18 @@ class AdminHandler:
             ("allowimages", self.filter_commands.allow_images_command),
             ("stripheaders", self.filter_commands.strip_headers_command),
             ("keepheaders", self.filter_commands.keep_headers_command),
+            # Advanced image and word filtering
+            ("blockimage", self.filter_commands.blockimage_command),
+            ("unblockimage", self.filter_commands.unblockimage_command),
+            ("blockwordpair", self.filter_commands.blockwordpair_command),
+            ("allowwordpair", self.filter_commands.allowwordpair_command),
             # Bot token management
             ("addbot", self.bot_management.addbot_command),
             ("listbots", self.bot_management.listbots_command),
             ("removebot", self.bot_management.removebot_command),
-            # Enhanced pair creation
+            # Enhanced pair creation wizard (different from addpair)
             ("createpair", self.pair_wizard.start_pair_wizard),
-            # Bot token management
+            # Bot token management (no duplicates)
             ("validatebot", self.enhanced_commands.validate_bot_command),
             ("updatebottoken", self.enhanced_commands.update_bot_token_command),
             # System monitoring

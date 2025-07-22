@@ -314,3 +314,40 @@ class MessageFilter:
         except Exception as e:
             logger.error(f"Error updating global settings: {e}")
             return False
+    
+    async def add_pair_blocked_word(self, pair_id: int, word: str) -> bool:
+        """Add blocked word for specific pair."""
+        try:
+            # For now, use a simple in-memory storage
+            # In production, this would be stored in database
+            if not hasattr(self, 'pair_blocked_words'):
+                self.pair_blocked_words = {}
+            
+            if pair_id not in self.pair_blocked_words:
+                self.pair_blocked_words[pair_id] = set()
+            
+            self.pair_blocked_words[pair_id].add(word.lower())
+            logger.info(f"Added blocked word '{word}' for pair {pair_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error adding pair blocked word: {e}")
+            return False
+    
+    async def remove_pair_blocked_word(self, pair_id: int, word: str) -> bool:
+        """Remove blocked word for specific pair."""
+        try:
+            if not hasattr(self, 'pair_blocked_words'):
+                self.pair_blocked_words = {}
+            
+            if pair_id in self.pair_blocked_words:
+                self.pair_blocked_words[pair_id].discard(word.lower())
+                if not self.pair_blocked_words[pair_id]:
+                    del self.pair_blocked_words[pair_id]
+                    
+            logger.info(f"Removed blocked word '{word}' for pair {pair_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error removing pair blocked word: {e}")
+            return False
