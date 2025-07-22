@@ -596,6 +596,38 @@ class UnifiedSessionCommands:
         except Exception as e:
             logger.error(f"Error cleaning up verification {verification_id}: {e}")
     
+    async def handle_text_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle text messages for OTP verification."""
+        if not update.message or not update.message.text:
+            return
+        
+        try:
+            user_id = update.effective_user.id if update.effective_user else 0
+            message_text = update.message.text.strip()
+            
+            # Check if this is an OTP code (6 digits)
+            if message_text.isdigit() and len(message_text) == 6:
+                # Find pending verification for this user
+                verification_id = None
+                for vid in list(self.pending_verifications.keys()):
+                    if vid.endswith(f"_{user_id}_"):
+                        verification_id = vid
+                        break
+                
+                if verification_id:
+                    # Process OTP
+                    await self._process_otp_verification(update, context, verification_id, message_text)
+                    return
+            
+            # Not an OTP or no pending verification
+            await update.message.reply_text(
+                "❓ I don't understand that message. Use /help to see available commands."
+            )
+            
+        except Exception as e:
+            logger.error(f"Error handling text message: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
     async def _cleanup_expired_verification(self, verification_id: str, delay: int):
         """Clean up expired verification after delay."""
         await asyncio.sleep(delay)

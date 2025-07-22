@@ -11,11 +11,8 @@ from loguru import logger
 from core.database import Database
 from core.session_manager import SessionManager
 from core.advanced_session_manager import AdvancedSessionManager
-from admin_bot.commands import AdminCommands
+from admin_bot.unified_admin_commands import UnifiedAdminCommands
 from admin_bot.unified_session_commands import UnifiedSessionCommands
-from admin_bot.enhanced_commands import EnhancedAdminCommands
-from admin_bot.filter_commands import FilterCommands
-from admin_bot.comprehensive_help import ComprehensiveHelp
 from core.message_filter import MessageFilter
 from core.alert_system import AlertSystem
 from utils.encryption import EncryptionManager
@@ -32,10 +29,8 @@ class AdminHandler:
         self.admin_user_ids = set(admin_user_ids)
         self.encryption_manager = EncryptionManager(encryption_key)
         self.application: Optional[Application] = None
-        self.commands: Optional[AdminCommands] = None
-        self.unified_commands: Optional[UnifiedSessionCommands] = None
-        self.enhanced_commands: Optional[EnhancedAdminCommands] = None
-        self.filter_commands: Optional[FilterCommands] = None
+        self.unified_commands: Optional[UnifiedAdminCommands] = None
+        self.session_commands: Optional[UnifiedSessionCommands] = None
         self.message_filter: Optional[MessageFilter] = None
         self.alert_system: Optional[AlertSystem] = None
         self.running = False
@@ -56,22 +51,15 @@ class AdminHandler:
             self.alert_system = AlertSystem(self.database, self)
             await self.alert_system.start()
             
-            # Initialize commands handlers
-            self.commands = AdminCommands(self.database, self.session_manager)
-            self.enhanced_commands = EnhancedAdminCommands(self.database, self.session_manager, self.encryption_manager)
-            self.filter_commands = FilterCommands(self.database, self.message_filter)
+            # Initialize unified command system - replaces all separate command handlers
+            self.unified_commands = UnifiedAdminCommands(
+                self.database, self.encryption_manager, self.message_filter, self.advanced_session_manager
+            )
             
-            # Import and initialize new components
-            from admin_bot.bot_management import BotManagementCommands
-            from admin_bot.enhanced_pair_wizard import EnhancedPairWizard
-            
-            self.bot_management = BotManagementCommands(self.database, self.encryption_manager)
-            from config.settings import Settings
-            settings = Settings()
-            self.pair_wizard = EnhancedPairWizard(self.database, self.session_manager, self.encryption_manager, settings.discord_bot_token)
-            
+            # Keep session commands for OTP handling
+            self.session_commands = None
             if self.advanced_session_manager:
-                self.unified_commands = UnifiedSessionCommands(self.database, self.advanced_session_manager)
+                self.session_commands = UnifiedSessionCommands(self.database, self.advanced_session_manager)
             
             # Create application
             self.application = Application.builder().token(self.bot_token).build()
@@ -129,84 +117,66 @@ class AdminHandler:
                 logger.error(f"Error stopping admin bot: {e}")
         
         self.application = None
-        self.commands = None
+        self.unified_commands = None
+        self.session_commands = None
     
     def _setup_handlers(self):
         """Setup command and callback handlers."""
-        if not self.application or not self.commands:
+        if not self.application or not self.unified_commands:
             return
         
-        # Add comprehensive command handlers with admin check
+        # Clean unified command handlers - no duplicates
         command_handlers = [
-            ("start", self.commands.start_command),
-            ("help", ComprehensiveHelp.show_help_menu),
-            ("addpair", self.enhanced_commands.addpair_enhanced_command),  # Enhanced version only
-            ("listpairs", self.commands.listpairs_command),
-            ("removepair", self.commands.removepair_command),
-            ("status", self.commands.status_command),
-            ("sessions", self.commands.sessions_command),
-            ("changesession", self.commands.changesession_command),
-            # Enhanced filtering commands
-            ("blockword", self.filter_commands.blockword_command),
-            ("unblockword", self.filter_commands.unblockword_command),
-            ("showfilters", self.filter_commands.showfilters_command),
-            ("filterconfig", self.filter_commands.filterconfig_command),
-            ("testfilter", self.filter_commands.testfilter_command),
-            # Quick filter shortcuts
-            ("blockimages", self.filter_commands.block_images_command),
-            ("allowimages", self.filter_commands.allow_images_command),
-            ("stripheaders", self.filter_commands.strip_headers_command),
-            ("keepheaders", self.filter_commands.keep_headers_command),
-            # Advanced image and word filtering
-            ("blockimage", self.filter_commands.blockimage_command),
-            ("unblockimage", self.filter_commands.unblockimage_command),
-            ("blockwordpair", self.filter_commands.blockwordpair_command),
-            ("allowwordpair", self.filter_commands.allowwordpair_command),
-            # Image help command
-            ("imagehelp", self._show_image_help),
+            # Core commands
+            ("start", self.unified_commands.start_command),
+            ("help", self.unified_commands.help_command),
+            ("status", self.unified_commands.status_command),
+            
             # Bot token management
-            ("addbot", self.bot_management.addbot_command),
-            ("listbots", self.bot_management.listbots_command),
-            ("removebot", self.bot_management.removebot_command),
-            # Enhanced pair creation wizard (different from addpair)
-            ("createpair", self.pair_wizard.start_pair_wizard),
-            # Bot token management (no duplicates)
-            ("validatebot", self.enhanced_commands.validate_bot_command),
-            ("updatebottoken", self.enhanced_commands.update_bot_token_command),
+            ("addbot", self.unified_commands.addbot_command),
+            ("listbots", self.unified_commands.listbots_command),
+            ("removebot", self.unified_commands.removebot_command),
+            
+            # Filtering system
+            ("blockword", self.unified_commands.blockword_command),
+            ("unblockword", self.unified_commands.unblockword_command),
+            ("blockimage", self.unified_commands.blockimage_command),
+            ("showfilters", self.unified_commands.showfilters_command),
+            ("blockimages", self.unified_commands.blockimages_command),
+            ("allowimages", self.unified_commands.allowimages_command),
+            
+            # Session management
+            ("sessions", self.unified_commands.sessions_command),
+            
+            # Pair management
+            ("listpairs", self.unified_commands.listpairs_command),
+            
             # System monitoring
-            ("alerts", self._show_alerts_command),
-            ("logs", self._show_logs_command),
             ("health", self._health_check_command),
         ]
         
-        # Add unified session management command
-        if self.unified_commands:
-            unified_handlers = [
-                ("addsession", self.unified_commands.addsession_command),
-            ]
-            command_handlers.extend(unified_handlers)
+        # Add session management command
+        if self.session_commands:
+            command_handlers.append(("addsession", self.session_commands.addsession_command))
         
         for command_name, handler_func in command_handlers:
             wrapped_handler = self._wrap_admin_handler(handler_func)
             self.application.add_handler(CommandHandler(command_name, wrapped_handler))
         
-        # Add unified session callback handlers FIRST (more specific patterns)
-        if self.unified_commands:
-            otp_callback_handler = self._wrap_admin_handler(self.unified_commands.handle_otp_callback)
+        # Add session callback handlers for OTP
+        if self.session_commands:
+            otp_callback_handler = self._wrap_admin_handler(self.session_commands.handle_otp_callback)
             self.application.add_handler(CallbackQueryHandler(otp_callback_handler, pattern="^(enter_otp|resend_otp|cancel_otp):"))
         
-        # Add general callback query handlers LAST (catch-all)
-        wrapped_callback_handler = self._wrap_admin_handler(self.commands.handle_callback_query)
-        self.application.add_handler(CallbackQueryHandler(wrapped_callback_handler))
-        
-        # Add message handler for enhanced pair creation, OTP codes, and wizard input
-        combined_message_handler = self._wrap_admin_handler(self._handle_combined_messages)
-        self.application.add_handler(
-            MessageHandler(filters.TEXT & ~filters.COMMAND, combined_message_handler)
-        )
+        # Add message handler for OTP codes only
+        if self.session_commands:
+            text_message_handler = self._wrap_admin_handler(self.session_commands.handle_text_message)
+            self.application.add_handler(
+                MessageHandler(filters.TEXT & ~filters.COMMAND, text_message_handler)
+            )
         
         # Add image message handler for hash generation
-        image_message_handler = self._wrap_admin_handler(self._handle_image_message)
+        image_message_handler = self._wrap_admin_handler(self.unified_commands.handle_image_upload)
         self.application.add_handler(
             MessageHandler(filters.PHOTO, image_message_handler)
         )
