@@ -19,6 +19,7 @@ from core.advanced_session_manager import AdvancedSessionManager
 from core.telegram_source import TelegramSource
 from core.telegram_destination import TelegramDestination
 from core.discord_relay import DiscordRelay
+from core.message_orchestrator import MessageOrchestrator
 from admin_bot.admin_handler import AdminHandler
 
 
@@ -33,6 +34,7 @@ class ForwardingBot:
         self.telegram_source: Optional[TelegramSource] = None
         self.telegram_destination: Optional[TelegramDestination] = None
         self.discord_relay: Optional[DiscordRelay] = None
+        self.message_orchestrator: Optional[MessageOrchestrator] = None
         self.admin_handler: Optional[AdminHandler] = None
         self.running = False
         
@@ -80,6 +82,15 @@ class ForwardingBot:
             self.settings.discord_bot_token, self.database
         )
         
+        # Initialize message orchestrator to connect all components
+        self.message_orchestrator = MessageOrchestrator(
+            self.database,
+            self.telegram_source,
+            self.telegram_destination,
+            self.discord_relay,
+            self.session_manager
+        )
+        
         # Initialize admin handler
         self.admin_handler = AdminHandler(
             self.settings.telegram_bot_token,
@@ -107,11 +118,14 @@ class ForwardingBot:
         self.running = True
         
         try:
-            # Start non-blocking components first
+            # Start core components first
             await self.advanced_session_manager.start()
             await self.telegram_source.start()
             await self.telegram_destination.start()
             await self.discord_relay.start()
+            
+            # Start message orchestrator to connect everything
+            await self.message_orchestrator.start()
             
             # Start admin handler and health monitor as background tasks
             admin_task = asyncio.create_task(self.admin_handler.start())
@@ -136,6 +150,8 @@ class ForwardingBot:
         stop_tasks = []
         if self.admin_handler:
             stop_tasks.append(self.admin_handler.stop())
+        if self.message_orchestrator:
+            stop_tasks.append(self.message_orchestrator.stop())
         if self.discord_relay:
             stop_tasks.append(self.discord_relay.stop())
         if self.telegram_destination:

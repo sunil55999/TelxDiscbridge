@@ -69,7 +69,14 @@ class SessionManager:
         """Get and decrypt session data."""
         try:
             async with self.database.Session() as session:
-                session_model = await session.get(SessionModel, name)
+                from sqlalchemy import select
+                
+                # Query by name since it's a unique field, not primary key
+                result = await session.execute(
+                    select(SessionModel).where(SessionModel.name == name)
+                )
+                session_model = result.scalar_one_or_none()
+                
                 if not session_model or not session_model.is_active:
                     return None
                 

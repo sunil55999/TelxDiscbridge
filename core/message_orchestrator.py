@@ -52,12 +52,9 @@ class MessageOrchestrator:
             self.running = True
             logger.info("Message orchestrator started successfully")
             
-            # Start monitoring and cleanup tasks
-            await asyncio.gather(
-                self._monitor_message_flow(),
-                self._cleanup_old_data(),
-                return_exceptions=True
-            )
+            # Start monitoring and cleanup tasks as background tasks
+            asyncio.create_task(self._monitor_message_flow())
+            asyncio.create_task(self._cleanup_old_data())
             
         except Exception as e:
             logger.error(f"Failed to start message orchestrator: {e}")
